@@ -25,8 +25,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Handle unauthorized access (e.g., redirect to login)
-      window.location.href = '/login';
+      // Instead of directly redirecting, let Redux handle this
+      // This prevents automatic redirects during app initialization
+      console.log('401 Unauthorized - Not automatically redirecting');
+      // We could dispatch a logout action here if needed
+      // store.dispatch(logout());
     }
     return Promise.reject(error);
   }
