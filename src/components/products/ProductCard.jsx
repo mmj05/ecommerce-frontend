@@ -46,6 +46,7 @@ const ProductCard = ({ product }) => {
             onClick={handleAddToCart}
             className="btn bg-white text-primary hover:bg-primary hover:text-white p-2 rounded-full"
             aria-label="Add to cart"
+            disabled={product.quantity === 0}
           >
             <FiShoppingCart size={18} />
           </button>
@@ -75,10 +76,10 @@ const ProductCard = ({ product }) => {
           <div className="flex items-center">
             {product.discount > 0 ? (
               <>
-                <span className="text-lg font-bold text-primary">
+                <span className="text-lg font-bold text-primary mr-2">
                   ${product.specialPrice.toFixed(2)}
                 </span>
-                <span className="text-sm text-gray-500 line-through ml-2">
+                <span className="text-sm text-gray-500 line-through">
                   ${product.price.toFixed(2)}
                 </span>
               </>
@@ -91,7 +92,10 @@ const ProductCard = ({ product }) => {
 
           <button
             onClick={handleAddToCart}
-            className="btn-primary text-xs px-3 py-2 rounded"
+            disabled={product.quantity === 0}
+            className={`btn-primary text-xs px-3 py-2 rounded ${
+              product.quantity === 0 ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
             Add to Cart
           </button>
@@ -99,11 +103,11 @@ const ProductCard = ({ product }) => {
 
         {/* Stock Status */}
         <div className="mt-2">
-          {product.quantity > 0 ? (
-            <span className="text-xs text-green-600">In Stock</span>
-          ) : (
-            <span className="text-xs text-red-600">Out of Stock</span>
-          )}
+          <span className={`text-xs font-medium ${
+            product.quantity > 0 ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {product.quantity > 0 ? 'In Stock' : 'Out of Stock'}
+          </span>
         </div>
       </div>
     </div>
