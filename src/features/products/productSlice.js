@@ -5,6 +5,7 @@ const initialState = {
   products: [],
   categories: [],
   featuredProducts: [],
+  product: null, // For single product details
   isLoading: false,
   error: null,
   pagination: {
@@ -24,6 +25,18 @@ export const fetchAllProducts = createAsyncThunk(
       return await productService.getAllProducts(pageNumber, pageSize, sortBy, sortOrder);
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch products');
+    }
+  }
+);
+
+// Fetch product details
+export const fetchProductDetails = createAsyncThunk(
+  'products/fetchDetails',
+  async (productId, { rejectWithValue }) => {
+    try {
+      return await productService.getProductDetails(productId);
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch product details');
     }
   }
 );
@@ -93,6 +106,22 @@ const productSlice = createSlice({
       .addCase(fetchAllProducts.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+      })
+
+      // Fetch product details
+      .addCase(fetchProductDetails.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+        state.product = null;
+      })
+      .addCase(fetchProductDetails.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.product = action.payload;
+      })
+      .addCase(fetchProductDetails.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        state.product = null;
       })
 
       // Fetch products by category
