@@ -9,6 +9,12 @@ const productService = {
     return response.data;
   },
 
+  // Get product details by ID
+  getProductDetails: async (productId) => {
+    const response = await api.get(`/public/products/${productId}`);
+    return response.data;
+  },
+
   // Get products by category with pagination
   getProductsByCategory: async (categoryId, pageNumber = 0, pageSize = 10, sortBy = 'productId', sortOrder = 'asc') => {
     const response = await api.get(`/public/categories/${categoryId}/products`, {
