@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../features/auth/authSlice';
@@ -6,15 +6,34 @@ import { FiShoppingCart, FiUser, FiMenu, FiX, FiSearch } from 'react-icons/fi';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.cart);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const profileMenuRef = useRef(null);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
+  
+  // Handle clicks outside of the profile menu
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setIsProfileMenuOpen(false);
+      }
+    }
+    
+    // Attach the event listener
+    document.addEventListener("mousedown", handleClickOutside);
+    
+    // Clean up the event listener
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -66,33 +85,52 @@ const Header = () => {
             </Link>
             
             {isAuthenticated ? (
-              <div className="relative group">
-                <button className="flex items-center text-gray-700 hover:text-primary">
+              <div className="relative" ref={profileMenuRef}>
+                <button 
+                  className={`flex items-center ${isProfileMenuOpen ? 'text-primary' : 'text-gray-700 hover:text-primary'}`}
+                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                >
                   <FiUser className="mr-1" />
                   {user?.username || 'User'}
+                  <svg 
+                    className={`ml-1 h-5 w-5 transition-transform duration-200 ${isProfileMenuOpen ? 'rotate-180' : ''}`} 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    viewBox="0 0 20 20" 
+                    fill="currentColor" 
+                    aria-hidden="true"
+                  >
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
                 </button>
-                <div className="absolute right-0 z-10 w-48 mt-2 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition duration-200">
-                  <div className="py-1">
-                    <Link
-                      to="/profile"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Profile
-                    </Link>
-                    <Link
-                      to="/orders"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      My Orders
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Logout
-                    </button>
+                {isProfileMenuOpen && (
+                  <div className="absolute right-0 z-10 w-48 mt-2 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg">
+                    <div className="py-1">
+                      <Link
+                        to="/profile"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsProfileMenuOpen(false)}
+                      >
+                        Profile
+                      </Link>
+                      <Link
+                        to="/orders"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsProfileMenuOpen(false)}
+                      >
+                        My Orders
+                      </Link>
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setIsProfileMenuOpen(false);
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Logout
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             ) : (
               <Link to="/login" className="text-gray-700 hover:text-primary">
@@ -161,16 +199,18 @@ const Header = () => {
                 <>
                   <Link
                     to="/profile"
-                    className="text-gray-700 hover:text-primary"
+                    className="text-gray-700 hover:text-primary flex items-center"
                     onClick={() => setIsMenuOpen(false)}
                   >
+                    <FiUser className="mr-2" />
                     Profile
                   </Link>
                   <Link
                     to="/orders"
-                    className="text-gray-700 hover:text-primary"
+                    className="text-gray-700 hover:text-primary flex items-center"
                     onClick={() => setIsMenuOpen(false)}
                   >
+                    <FiShoppingCart className="mr-2" />
                     My Orders
                   </Link>
                   <button
@@ -178,8 +218,9 @@ const Header = () => {
                       handleLogout();
                       setIsMenuOpen(false);
                     }}
-                    className="text-left text-gray-700 hover:text-primary"
+                    className="text-left text-gray-700 hover:text-primary flex items-center"
                   >
+                    <FiX className="mr-2" />
                     Logout
                   </button>
                 </>
