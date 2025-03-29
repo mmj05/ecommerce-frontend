@@ -15,24 +15,23 @@ const Cart = () => {
   const [cartId, setCartId] = useState(null);
   
   useEffect(() => {
+    // Fetch cart data when component mounts
     dispatch(getCart());
   }, [dispatch]);
   
   useEffect(() => {
-    // Get cart ID from first item (all items have the same cart ID)
-    if (cartItems.length > 0 && cartItems[0].cartId) {
+    // Get cart ID from first item (all items have the same cart ID) if authenticated
+    if (isAuthenticated && cartItems.length > 0 && cartItems[0].cartId) {
       setCartId(cartItems[0].cartId);
     }
-  }, [cartItems]);
+  }, [cartItems, isAuthenticated]);
   
   const handleQuantityChange = (productId, operation) => {
     dispatch(updateCartItem({ productId, operation }));
   };
   
   const handleRemoveItem = (productId) => {
-    if (cartId) {
-      dispatch(removeFromCart({ cartId, productId }));
-    }
+    dispatch(removeFromCart({ cartId, productId }));
   };
   
   const handleCheckout = () => {
@@ -100,6 +99,11 @@ const Cart = () => {
                     <h2 className="text-xl font-semibold text-gray-900">
                       Items ({cartItems.length})
                     </h2>
+                    {!isAuthenticated && (
+                      <p className="text-sm text-gray-500 mt-2">
+                        You're not signed in. <Link to="/login" className="text-primary hover:underline">Sign in</Link> to save your cart and checkout.
+                      </p>
+                    )}
                   </div>
                   
                   <ul className="divide-y divide-gray-200">
@@ -210,8 +214,14 @@ const Cart = () => {
                       onClick={handleCheckout}
                       className="w-full btn-primary py-3 flex items-center justify-center"
                     >
-                      Proceed to Checkout
+                      {isAuthenticated ? 'Proceed to Checkout' : 'Sign in to Checkout'}
                     </button>
+                    
+                    {!isAuthenticated && (
+                      <p className="text-sm text-gray-500 mt-4 text-center">
+                        Your cart will be saved when you sign in.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
