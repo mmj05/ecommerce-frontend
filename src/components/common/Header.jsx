@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../features/auth/authSlice';
+import { getCart } from '../../features/cart/cartSlice';
 import { FiShoppingCart, FiUser, FiMenu, FiX, FiSearch } from 'react-icons/fi';
 
 const Header = () => {
@@ -13,6 +14,11 @@ const Header = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const profileMenuRef = useRef(null);
+
+  // Fetch cart data when component mounts
+  useEffect(() => {
+    dispatch(getCart());
+  }, [dispatch, isAuthenticated]); // Re-fetch when authentication status changes
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -40,16 +46,20 @@ const Header = () => {
     if (searchQuery.trim()) {
       navigate(`/products?search=${searchQuery}`);
       setSearchQuery('');
+      setIsMenuOpen(false); // Close mobile menu after search
     }
   };
 
-  const handleLogout = () => {
-    dispatch(logout());
+  const handleLogout = async () => {
+    await dispatch(logout());
     navigate('/');
   };
 
+  // Get cart items count - works for both guest and authenticated users
+  const cartItemsCount = cartItems.length;
+
   return (
-    <header className="bg-white shadow-md">
+    <header className="bg-white shadow-md sticky top-0 z-50">
       <div className="container-custom py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
@@ -144,9 +154,9 @@ const Header = () => {
               className="relative text-gray-700 hover:text-primary"
             >
               <FiShoppingCart size={22} />
-              {cartItems.length > 0 && (
+              {cartItemsCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-primary text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                  {cartItems.length}
+                  {cartItemsCount}
                 </span>
               )}
             </Link>
@@ -241,9 +251,9 @@ const Header = () => {
               >
                 <FiShoppingCart className="mr-2" />
                 Cart
-                {cartItems.length > 0 && (
+                {cartItemsCount > 0 && (
                   <span className="ml-2 bg-primary text-white text-xs px-2 py-1 rounded-full">
-                    {cartItems.length}
+                    {cartItemsCount}
                   </span>
                 )}
               </Link>
