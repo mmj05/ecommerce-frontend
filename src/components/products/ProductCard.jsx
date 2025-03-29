@@ -1,19 +1,37 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { FiShoppingCart, FiEye } from 'react-icons/fi';
+import { FiShoppingCart, FiEye, FiCheck } from 'react-icons/fi';
 import { addToCart } from '../../features/cart/cartSlice';
 
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
+  const [isAdding, setIsAdding] = useState(false);
+  const [isAdded, setIsAdded] = useState(false);
 
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
     
+    if (isAdding || product.quantity === 0) return;
+    
+    setIsAdding(true);
+    
     dispatch(addToCart({ 
       productId: product.productId, 
       quantity: 1 
-    }));
+    })).then(() => {
+      // Show "Added" feedback
+      setIsAdded(true);
+      
+      // Reset after a delay
+      setTimeout(() => {
+        setIsAdded(false);
+        setIsAdding(false);
+      }, 1500);
+    }).catch(() => {
+      setIsAdding(false);
+    });
   };
 
   // Calculate discount percentage
@@ -44,15 +62,19 @@ const ProductCard = ({ product }) => {
         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={handleAddToCart}
-            className="btn bg-white text-primary hover:bg-primary hover:text-white p-2 rounded-full"
+            className={`btn bg-white text-primary hover:bg-primary hover:text-white p-2 rounded-full transition-colors duration-200 ${
+              isAdding ? 'opacity-70 cursor-wait' : ''
+            } ${isAdded ? 'bg-green-500 text-white' : ''} ${
+              product.quantity === 0 ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
             aria-label="Add to cart"
-            disabled={product.quantity === 0}
+            disabled={isAdding || product.quantity === 0}
           >
-            <FiShoppingCart size={18} />
+            {isAdded ? <FiCheck size={18} /> : <FiShoppingCart size={18} />}
           </button>
           <Link
             to={`/products/${product.productId}`}
-            className="btn bg-white text-primary hover:bg-primary hover:text-white p-2 rounded-full"
+            className="btn bg-white text-primary hover:bg-primary hover:text-white p-2 rounded-full transition-colors duration-200"
             aria-label="View product"
           >
             <FiEye size={18} />
@@ -92,12 +114,14 @@ const ProductCard = ({ product }) => {
 
           <button
             onClick={handleAddToCart}
-            disabled={product.quantity === 0}
-            className={`btn-primary text-xs px-3 py-2 rounded ${
+            disabled={isAdding || product.quantity === 0}
+            className={`btn-primary text-xs px-3 py-2 rounded transition-all ${
+              isAdding ? 'opacity-70 cursor-wait' : ''
+            } ${isAdded ? 'bg-green-500 border-green-500' : ''} ${
               product.quantity === 0 ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            Add to Cart
+            {isAdded ? 'Added' : product.quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
           </button>
         </div>
 
