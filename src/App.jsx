@@ -1,7 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { getCurrentUser } from './features/auth/authSlice';
+import { getCart } from './features/cart/cartSlice';
 
 // Pages
 import Home from './pages/Home';
@@ -23,11 +24,17 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 
 function App() {
   const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector(state => state.auth);
 
   useEffect(() => {
-    // Check if user is already logged in
+    // Check if user is already logged in on app load
     dispatch(getCurrentUser());
   }, [dispatch]);
+
+  useEffect(() => {
+    // When authentication status changes, fetch the cart
+    dispatch(getCart());
+  }, [dispatch, isAuthenticated]);
 
   return (
     <Router>
