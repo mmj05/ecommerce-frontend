@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { FiShoppingCart, FiMinus, FiPlus } from 'react-icons/fi';
+import { FiShoppingCart, FiMinus, FiPlus, FiCheck, FiArrowLeft } from 'react-icons/fi';
 import { addToCart } from '../../features/cart/cartSlice';
 import { fetchProductDetails } from '../../features/products/productSlice';
 
 const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
+  const [isAdding, setIsAdding] = useState(false);
+  const [isAdded, setIsAdded] = useState(false);
   const { id } = useParams();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const { product, isLoading, error } = useSelector((state) => state.products);
 
@@ -17,6 +20,11 @@ const ProductDetails = () => {
     if (id) {
       dispatch(fetchProductDetails(id));
     }
+    
+    // Reset state when component mounts
+    setQuantity(1);
+    setIsAdding(false);
+    setIsAdded(false);
   }, [dispatch, id]);
 
   const handleQuantityChange = (action) => {
@@ -28,12 +36,29 @@ const ProductDetails = () => {
   };
 
   const handleAddToCart = () => {
-    if (product) {
-      dispatch(addToCart({ 
-        productId: product.productId, 
-        quantity 
-      }));
-    }
+    if (!product || isAdding || product.quantity === 0) return;
+    
+    setIsAdding(true);
+    
+    dispatch(addToCart({ 
+      productId: product.productId, 
+      quantity 
+    })).then(() => {
+      // Show success feedback
+      setIsAdded(true);
+      
+      // Reset after a delay
+      setTimeout(() => {
+        setIsAdded(false);
+        setIsAdding(false);
+      }, 2000);
+    }).catch(() => {
+      setIsAdding(false);
+    });
+  };
+
+  const handleGoBack = () => {
+    navigate(-1); // Go back to previous page
   };
 
   if (isLoading) {
@@ -70,6 +95,14 @@ const ProductDetails = () => {
 
   return (
     <div className="container-custom py-12">
+      {/* Back button */}
+      <button 
+        onClick={handleGoBack}
+        className="flex items-center text-gray-600 hover:text-primary mb-6"
+      >
+        <FiArrowLeft className="mr-2" /> Back
+      </button>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         {/* Product Image */}
         <div>
@@ -135,11 +168,12 @@ const ProductDetails = () => {
           {/* Quantity Selector */}
           {product.quantity > 0 && (
             <div className="flex items-center space-x-4 mb-6">
+              <span className="text-gray-700">Quantity:</span>
               <div className="flex items-center border border-gray-300 rounded">
                 <button
                   onClick={() => handleQuantityChange('decrease')}
                   className="p-2 text-gray-600 hover:bg-gray-100"
-                  disabled={quantity <= 1}
+                  disabled={quantity <= 1 || isAdding}
                 >
                   <FiMinus />
                 </button>
@@ -147,7 +181,7 @@ const ProductDetails = () => {
                 <button
                   onClick={() => handleQuantityChange('increase')}
                   className="p-2 text-gray-600 hover:bg-gray-100"
-                  disabled={quantity >= product.quantity}
+                  disabled={quantity >= product.quantity || isAdding}
                 >
                   <FiPlus />
                 </button>
@@ -158,13 +192,35 @@ const ProductDetails = () => {
           {/* Add to Cart Button */}
           <button
             onClick={handleAddToCart}
-            disabled={product.quantity === 0}
-            className={`btn-primary flex items-center justify-center gap-2 w-full ${
+            disabled={product.quantity === 0 || isAdding}
+            className={`btn-primary flex items-center justify-center gap-2 w-full transition-all ${
+              isAdding ? 'opacity-70 cursor-wait' : ''
+            } ${isAdded ? 'bg-green-500 border-green-500' : ''} ${
               product.quantity === 0 ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            <FiShoppingCart /> Add to Cart
+            {isAdded ? (
+              <>
+                <FiCheck /> Added to Cart
+              </>
+            ) : (
+              <>
+                <FiShoppingCart /> {isAdding ? 'Adding...' : 'Add to Cart'}
+              </>
+            )}
           </button>
+          
+          {/* Additional product info */}
+          <div className="mt-8 border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-semibold mb-3">Product Details</h3>
+            <ul className="space-y-2 text-sm text-gray-600">
+              <li><span className="font-medium">Product ID:</span> {product.productId}</li>
+              {product.category && (
+                <li><span className="font-medium">Category:</span> {product.category.categoryName}</li>
+              )}
+              <li><span className="font-medium">In Stock:</span> {product.quantity} units</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
