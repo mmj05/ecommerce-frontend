@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { login, clearError } from '../features/auth/authSlice';
+import { mergeCart } from '../features/cart/cartSlice';
 import { FiMail, FiLock, FiAlertCircle } from 'react-icons/fi';
 
 const Login = () => {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
+    rememberMe: false
   });
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,6 +19,7 @@ const Login = () => {
   const location = useLocation();
   
   const { isAuthenticated, error, isLoading } = useSelector((state) => state.auth);
+  const { cartItems } = useSelector((state) => state.cart);
   
   // Redirect if already logged in
   useEffect(() => {
@@ -51,8 +54,11 @@ const Login = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const { name, value, type, checked } = e.target;
+    setFormData({ 
+      ...formData, 
+      [name]: type === 'checkbox' ? checked : value 
+    });
     
     // Clear specific field error when user types
     if (formErrors[name]) {
@@ -70,8 +76,23 @@ const Login = () => {
     
     if (validateForm()) {
       setIsSubmitting(true);
-      await dispatch(login(formData));
-      setIsSubmitting(false);
+      
+      try {
+        // Login the user
+        await dispatch(login(formData)).unwrap();
+        
+        // If there are items in the guest cart, merge them
+        if (cartItems.length > 0) {
+          await dispatch(mergeCart());
+        }
+        
+        // Navigation is handled by the useEffect that watches isAuthenticated
+      } catch (err) {
+        // Error is handled by the reducer and displayed in the UI
+        console.error('Login failed:', err);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -153,8 +174,10 @@ const Login = () => {
           <div className="flex items-center">
             <input
               id="remember-me"
-              name="remember-me"
+              name="rememberMe"
               type="checkbox"
+              checked={formData.rememberMe}
+              onChange={handleChange}
               className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
             />
             <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
@@ -168,7 +191,7 @@ const Login = () => {
               disabled={isLoading || isSubmitting}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading || isSubmitting ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
         </form>
