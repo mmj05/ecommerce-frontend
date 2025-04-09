@@ -55,8 +55,8 @@ const Header = () => {
     navigate('/');
   };
 
-  // Get cart items count - works for both guest and authenticated users
-  const cartItemsCount = cartItems.length;
+  // Calculate total cart items quantity
+  const cartItemsQuantity = cartItems.reduce((total, item) => total + item.quantity, 0);
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
@@ -154,9 +154,9 @@ const Header = () => {
               className="relative text-gray-700 hover:text-primary"
             >
               <FiShoppingCart size={22} />
-              {cartItemsCount > 0 && (
+              {cartItemsQuantity > 0 && (
                 <span className="absolute -top-2 -right-2 bg-primary text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                  {cartItemsCount}
+                  {cartItemsQuantity > 99 ? '99+' : cartItemsQuantity}
                 </span>
               )}
             </Link>
@@ -251,9 +251,9 @@ const Header = () => {
               >
                 <FiShoppingCart className="mr-2" />
                 Cart
-                {cartItemsCount > 0 && (
+                {cartItemsQuantity > 0 && (
                   <span className="ml-2 bg-primary text-white text-xs px-2 py-1 rounded-full">
-                    {cartItemsCount}
+                    {cartItemsQuantity > 99 ? '99+' : cartItemsQuantity}
                   </span>
                 )}
               </Link>
