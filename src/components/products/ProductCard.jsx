@@ -1,13 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { FiShoppingCart, FiEye, FiCheck } from 'react-icons/fi';
-import { addToCart } from '../../features/cart/cartSlice';
+import { addToCart, updateCartItem } from '../../features/cart/cartSlice';
 
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
+  const { cartItems } = useSelector((state) => state.cart);
   const [isAdding, setIsAdding] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
+  const [isInCart, setIsInCart] = useState(false);
+  
+  // Check if product is already in cart
+  useEffect(() => {
+    const existingItem = cartItems.find(item => item.productId === product.productId);
+    setIsInCart(!!existingItem);
+  }, [cartItems, product.productId]);
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -17,21 +25,26 @@ const ProductCard = ({ product }) => {
     
     setIsAdding(true);
     
-    dispatch(addToCart({ 
-      productId: product.productId, 
-      quantity: 1 
-    })).then(() => {
-      // Show "Added" feedback
-      setIsAdded(true);
-      
-      // Reset after a delay
-      setTimeout(() => {
-        setIsAdded(false);
+    // If product is already in cart, use updateCartItem instead of addToCart
+    const action = isInCart 
+      ? dispatch(updateCartItem({ productId: product.productId, operation: 'increase' }))
+      : dispatch(addToCart({ productId: product.productId, quantity: 1 }));
+    
+    action
+      .then(() => {
+        // Show "Added" feedback
+        setIsAdded(true);
+        
+        // Reset after a delay
+        setTimeout(() => {
+          setIsAdded(false);
+          setIsAdding(false);
+        }, 1500);
+      })
+      .catch((error) => {
+        console.error('Failed to add to cart:', error);
         setIsAdding(false);
-      }, 1500);
-    }).catch(() => {
-      setIsAdding(false);
-    });
+      });
   };
 
   // Calculate discount percentage
@@ -121,7 +134,7 @@ const ProductCard = ({ product }) => {
               product.quantity === 0 ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            {isAdded ? 'Added' : product.quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
+            {isAdded ? 'Added' : product.quantity === 0 ? 'Out of Stock' : isInCart ? 'Add More' : 'Add to Cart'}
           </button>
         </div>
 
