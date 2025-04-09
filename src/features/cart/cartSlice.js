@@ -43,7 +43,9 @@ export const addToCart = createAsyncThunk(
       const { auth } = getState();
       if (auth.isAuthenticated) {
         // Add to server cart if authenticated
-        return await cartService.addToCart(productId, quantity);
+        const response = await cartService.addToCart(productId, quantity);
+        console.log('Server response after adding to cart:', response);
+        return response; // Ensure we're returning the complete server response
       } else {
         // For guest users, add to local cart
         const { products } = getState();
@@ -72,10 +74,12 @@ export const addToCart = createAsyncThunk(
         };
       }
     } catch (error) {
+      console.error('Error in addToCart thunk:', error);
       return rejectWithValue(error.response?.data?.message || 'Failed to add product to cart');
     }
   }
 );
+
 
 // Update cart item quantity
 export const updateCartItem = createAsyncThunk(
@@ -85,7 +89,9 @@ export const updateCartItem = createAsyncThunk(
       const { auth } = getState();
       if (auth.isAuthenticated) {
         // Update server cart if authenticated
-        return await cartService.updateCartItem(productId, operation);
+        // Use the correct operation string that the backend expects
+        const backendOperation = operation === 'increase' ? 'increase' : 'decrease';
+        return await cartService.updateCartItem(productId, backendOperation);
       } else {
         // For guest users, update local cart
         const { cart } = getState();
@@ -107,29 +113,6 @@ export const updateCartItem = createAsyncThunk(
       }
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update cart item');
-    }
-  }
-);
-
-// Remove product from cart
-export const removeFromCart = createAsyncThunk(
-  'cart/removeFromCart',
-  async ({ cartId, productId }, { rejectWithValue, getState }) => {
-    try {
-      const { auth } = getState();
-      if (auth.isAuthenticated) {
-        // Remove from server cart if authenticated
-        await cartService.removeFromCart(cartId, productId);
-        return { productId };
-      } else {
-        // For guest users, remove from local cart
-        return { 
-          productId,
-          isGuest: true 
-        };
-      }
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to remove product from cart');
     }
   }
 );
@@ -157,6 +140,75 @@ export const mergeCart = createAsyncThunk(
     return dispatch(getCart()).unwrap();
   }
 );
+
+export const removeFromCart = createAsyncThunk(
+  'cart/removeFromCart',
+  async ({ cartId, productId }, { rejectWithValue, getState, dispatch }) => {
+    try {
+      const { auth } = getState();
+      const { cartItems } = getState().cart;
+      
+      if (auth.isAuthenticated) {
+        // Check if this is the last item in the cart
+        const isLastItem = cartItems.length === 1 && cartItems[0].productId === productId;
+        
+        // Remove from server cart if authenticated
+        await cartService.removeFromCart(cartId, productId);
+        
+        // If it was the last item, delete the empty cart
+        if (isLastItem) {
+          try {
+            console.log('Last item removed, deleting empty cart');
+            await cartService.deleteEmptyCart();
+            console.log('Empty cart deleted successfully after removing last item');
+          } catch (error) {
+            console.warn('Failed to delete empty cart after removing last item:', error);
+          }
+        }
+        
+        return { productId, isLastItem };
+      } else {
+        // For guest users, remove from local cart
+        return { 
+          productId,
+          isGuest: true 
+        };
+      }
+    } catch (error) {
+      console.error('Error removing from cart:', error);
+      return rejectWithValue(error.response?.data?.message || 'Failed to remove product from cart');
+    }
+  }
+);
+
+export const deleteEmptyCart = createAsyncThunk(
+  'cart/deleteEmptyCart',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await cartService.deleteEmptyCart();
+      console.log('Delete empty cart response:', response);
+      return response;
+    } catch (error) {
+      console.error('Error deleting empty cart:', error);
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete empty cart');
+    }
+  }
+);
+
+export const checkAndDeleteEmptyCart = () => async (dispatch, getState) => {
+  const { cart, auth } = getState();
+  
+  // Only proceed if authenticated and cart is empty
+  if (auth.isAuthenticated && cart.cartItems.length === 0) {
+    console.log('Cart is empty, attempting to delete from database');
+    try {
+      await dispatch(deleteEmptyCart()).unwrap();
+      console.log('Empty cart deleted successfully');
+    } catch (err) {
+      console.warn('Failed to delete empty cart:', err);
+    }
+  }
+};
 
 // Cart slice
 const cartSlice = createSlice({
@@ -225,8 +277,10 @@ const cartSlice = createSlice({
           }));
         } else {
           // Handle server cart response
-          state.cartItems = action.payload.products || [];
-          state.totalPrice = action.payload.totalPrice || 0;
+          if (action.payload && (action.payload.products || action.payload.content)) {
+            state.cartItems = action.payload.products || action.payload.content || [];
+            state.totalPrice = action.payload.totalPrice || 0;
+          }
         }
       })
       .addCase(addToCart.rejected, (state, action) => {
@@ -306,7 +360,12 @@ const cartSlice = createSlice({
           state.cartItems = state.cartItems.filter(
             item => item.productId !== action.payload.productId
           );
-          // Note: The total price will be updated on the next getCart call
+          
+          // If it was the last item, reset the cart completely
+          if (action.payload.isLastItem) {
+            state.cartItems = [];
+            state.totalPrice = 0;
+          }
         }
       })
       .addCase(removeFromCart.rejected, (state, action) => {
@@ -329,7 +388,21 @@ const cartSlice = createSlice({
       .addCase(mergeCart.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
-      });
+      })
+      .addCase(deleteEmptyCart.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteEmptyCart.fulfilled, (state) => {
+        state.isLoading = false;
+        // The cart is now deleted on the server, keep our local state in sync
+        console.log('Cart deletion successful, updating local state');
+      })
+      .addCase(deleteEmptyCart.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        console.warn('Failed to delete empty cart:', action.payload);
+      })
   },
 });
 
