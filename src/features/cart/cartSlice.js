@@ -21,7 +21,22 @@ export const getCart = createAsyncThunk(
       // Only fetch from API if user is authenticated
       const { auth } = getState();
       if (auth.isAuthenticated) {
-        return await cartService.getCart();
+        try {
+          // Add a timeout to prevent rapid successive API calls
+          const response = await cartService.getCart();
+          return response;
+        } catch (error) {
+          // If the API call fails for an authenticated user (e.g., no cart exists),
+          // return an empty cart structure instead of rejecting
+          if (error.response && (error.response.status === 404 || error.response.status === 400)) {
+            console.log('No cart found for authenticated user, returning empty cart');
+            return { 
+              products: [],
+              totalPrice: 0 
+            };
+          }
+          throw error; // Re-throw other errors
+        }
       } else {
         // Return the local cart for guest users
         return { 
@@ -30,6 +45,7 @@ export const getCart = createAsyncThunk(
         };
       }
     } catch (error) {
+      console.error('Error in getCart thunk:', error);
       return rejectWithValue(error.response?.data?.message || 'Failed to get cart');
     }
   }
@@ -199,11 +215,22 @@ export const checkAndDeleteEmptyCart = () => async (dispatch, getState) => {
   const { cart, auth } = getState();
   
   // Only proceed if authenticated and cart is empty
-  if (auth.isAuthenticated && cart.cartItems.length === 0) {
+  if (auth.isAuthenticated && cart.cartItems.length === 0 && !cart.isLoading) {
     console.log('Cart is empty, attempting to delete from database');
     try {
-      await dispatch(deleteEmptyCart()).unwrap();
-      console.log('Empty cart deleted successfully');
+      // Set a flag in localStorage to prevent duplicate delete attempts
+      const lastAttempt = localStorage.getItem('lastEmptyCartDeleteAttempt');
+      const now = Date.now();
+      
+      // Only try to delete if we haven't tried in the last 10 seconds
+      if (!lastAttempt || (now - parseInt(lastAttempt)) > 10000) {
+        localStorage.setItem('lastEmptyCartDeleteAttempt', now.toString());
+        
+        await dispatch(deleteEmptyCart()).unwrap();
+        console.log('Empty cart deleted successfully');
+      } else {
+        console.log('Skipping delete attempt, last attempt was too recent');
+      }
     } catch (err) {
       console.warn('Failed to delete empty cart:', err);
     }
