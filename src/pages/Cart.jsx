@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { checkAndDeleteEmptyCart } from '../features/cart/cartSlice';
 import { Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import {
@@ -16,33 +15,6 @@ import {
   removeFromCart,
 } from "../features/cart/cartSlice";
 
-const CheckEmptyCart = () => {
-  const dispatch = useDispatch();
-  const { cartItems, isLoading } = useSelector((state) => state.cart);
-  const { isAuthenticated } = useSelector((state) => state.auth);
-  
-  // Use a ref to track if we've already attempted to delete the empty cart
-  const deleteAttemptedRef = useRef(false);
-  
-  useEffect(() => {
-    // Only attempt to delete the empty cart once when conditions are met
-    // and we haven't already tried
-    if (!isLoading && isAuthenticated && cartItems.length === 0 && !deleteAttemptedRef.current) {
-      console.log('Attempting to delete empty cart...');
-      dispatch(checkAndDeleteEmptyCart());
-      deleteAttemptedRef.current = true;
-    }
-    
-    // Reset the flag if items are added to the cart
-    if (cartItems.length > 0) {
-      deleteAttemptedRef.current = false;
-    }
-  }, [dispatch, cartItems, isAuthenticated, isLoading]);
-  
-  return null;
-};
-
-
 const Cart = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -53,25 +25,23 @@ const Cart = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
 
   const [cartId, setCartId] = useState(null);
+  const initialLoadDoneRef = useRef(false);
 
+  // Fetch cart data when component mounts
   useEffect(() => {
-    // Fetch cart data when component mounts
-    dispatch(getCart());
+    if (!initialLoadDoneRef.current) {
+      dispatch(getCart());
+      initialLoadDoneRef.current = true;
+    }
   }, [dispatch]);
 
+  // Update cartId when cart data changes
   useEffect(() => {
-    // Get cart ID from first item (all items have the same cart ID) if authenticated
+    // Get cart ID from first item if authenticated (all items have the same cart ID)
     if (isAuthenticated && cartItems.length > 0 && cartItems[0].cartId) {
       setCartId(cartItems[0].cartId);
     }
-    
-    // Check for empty cart only once when the component mounts
-    // and the cart data is loaded (not on every render)
-    if (!isLoading && isAuthenticated && cartItems.length === 0) {
-      console.log('Cart is empty, checking if we need to delete it');
-      dispatch(checkAndDeleteEmptyCart());
-    }
-  }, [isAuthenticated, cartItems, isLoading, dispatch]);
+  }, [isAuthenticated, cartItems]);
 
   const handleQuantityChange = (productId, operation) => {
     // If decreasing and current quantity is 1, remove the item instead
@@ -86,7 +56,9 @@ const Cart = () => {
         .unwrap()
         .then(() => {
           // Refresh cart after update to ensure we have the latest data
-          dispatch(getCart());
+          if (isAuthenticated) {
+            dispatch(getCart());
+          }
         })
         .catch((error) => {
           console.error("Failed to update quantity:", error);
@@ -100,7 +72,7 @@ const Cart = () => {
       dispatch(getCart())
         .unwrap()
         .then((response) => {
-          const updatedCartId = response.cartId || response.products[0]?.cartId;
+          const updatedCartId = response.cartId || (response.products && response.products.length > 0 ? response.products[0].cartId : null);
           if (updatedCartId) {
             dispatch(removeFromCart({ cartId: updatedCartId, productId }))
               .unwrap()
@@ -145,7 +117,8 @@ const Cart = () => {
     return `$${amount.toFixed(2)}`;
   };
 
-  if (isLoading) {
+  // Show loading state only during initial load
+  if (isLoading && !initialLoadDoneRef.current) {
     return (
       <div className="min-h-screen flex justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -162,8 +135,6 @@ const Cart = () => {
           content="Review and manage items in your shopping cart"
         />
       </Helmet>
-
-      <CheckEmptyCart />
 
       <div className="bg-gray-50 py-12">
         <div className="container-custom">
