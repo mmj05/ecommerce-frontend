@@ -11,6 +11,7 @@ const initialState = {
   user: storedUser,
   isAuthenticated: !!storedUser,
   isLoading: false,
+  authChecked: false, // Add a new flag to track if we've checked auth state
   error: null,
 };
 
@@ -58,10 +59,8 @@ export const getCurrentUser = createAsyncThunk(
       return response;
     } catch (error) {
       // If getting current user fails, remove from localStorage
-      // But don't throw an error that would trigger a redirect
       localStorage.removeItem('user');
       console.log('Failed to get current user:', error);
-      // Return null instead of rejecting
       return null;
     }
   }
@@ -77,6 +76,8 @@ export const logout = createAsyncThunk(
       localStorage.removeItem('user');
       return null;
     } catch (error) {
+      // Even if logout API fails, we still want to remove the user from localStorage
+      localStorage.removeItem('user');
       return rejectWithValue(error.response?.data?.message || 'Logout failed');
     }
   }
@@ -128,10 +129,12 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = true;
         state.user = action.payload;
+        state.authChecked = true;
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+        state.authChecked = true;
       })
       
       // Register
@@ -141,11 +144,13 @@ const authSlice = createSlice({
       })
       .addCase(register.fulfilled, (state) => {
         state.isLoading = false;
+        state.authChecked = true;
         // We don't set authenticated here, user should log in after registration
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+        state.authChecked = true;
       })
       
       // Get current user
@@ -155,13 +160,16 @@ const authSlice = createSlice({
       })
       .addCase(getCurrentUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.isAuthenticated = true;
+        // Only set as authenticated if we actually got user data
+        state.isAuthenticated = !!action.payload;
         state.user = action.payload;
+        state.authChecked = true;
       })
       .addCase(getCurrentUser.rejected, (state) => {
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
+        state.authChecked = true;
       })
       
       // Logout
@@ -172,12 +180,14 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
+        state.authChecked = true;
       })
       .addCase(logout.rejected, (state) => {
         // Even if the API call fails, we still want to log the user out locally
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
+        state.authChecked = true;
       })
       
       // Request password reset
