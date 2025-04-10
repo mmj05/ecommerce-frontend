@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getCurrentUser } from './features/auth/authSlice';
 import { getCart } from './features/cart/cartSlice';
@@ -24,17 +24,34 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 
 function App() {
   const dispatch = useDispatch();
-  const { isAuthenticated } = useSelector(state => state.auth);
+  const { isAuthenticated, authChecked } = useSelector(state => state.auth);
+  const [initialAuthCheckDone, setInitialAuthCheckDone] = useState(false);
 
+  // Check if user is already logged in on app load
   useEffect(() => {
-    // Check if user is already logged in on app load
-    dispatch(getCurrentUser());
+    const checkAuth = async () => {
+      await dispatch(getCurrentUser());
+      setInitialAuthCheckDone(true);
+    };
+    
+    checkAuth();
   }, [dispatch]);
 
+  // When authentication status changes, fetch the cart
   useEffect(() => {
-    // When authentication status changes, fetch the cart
-    dispatch(getCart());
-  }, [dispatch, isAuthenticated]);
+    if (initialAuthCheckDone) {
+      dispatch(getCart());
+    }
+  }, [dispatch, isAuthenticated, initialAuthCheckDone]);
+
+  // Show loading screen until initial auth check completes
+  if (!initialAuthCheckDone && !authChecked) {
+    return (
+      <div className="min-h-screen flex justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <Router>
