@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { FiUser, FiMail, FiShoppingBag, FiMapPin, FiCreditCard, FiEdit } from 'react-icons/fi';
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState('profile');
-  const { user, isLoading } = useSelector((state) => state.auth);
+  const { user, isAuthenticated, isLoading } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
+  
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login', { state: { from: '/profile' } });
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
-  const tabs = [
-    { id: 'profile', label: 'Profile', icon: <FiUser /> },
-    { id: 'orders', label: 'Orders', icon: <FiShoppingBag /> },
-    { id: 'addresses', label: 'Addresses', icon: <FiMapPin /> },
-    { id: 'payment', label: 'Payment Methods', icon: <FiCreditCard /> },
-  ];
-
+  // Show loading state while checking authentication
   if (isLoading) {
     return (
       <div className="min-h-screen flex justify-center items-center">
@@ -21,6 +24,12 @@ const Profile = () => {
     );
   }
 
+  // If not authenticated and not loading, don't render the profile content
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  // Only render the profile content if authenticated and user data exists
   return (
     <div className="bg-gray-50 py-8">
       <div className="container-custom">
@@ -36,15 +45,20 @@ const Profile = () => {
                     <FiUser className="text-primary text-xl" />
                   </div>
                   <div className="ml-4">
-                    <h2 className="text-lg font-semibold text-gray-900">{user?.username || 'User'}</h2>
-                    <p className="text-gray-600 text-sm">{user?.email || 'email@example.com'}</p>
+                    <h2 className="text-lg font-semibold text-gray-900">{user?.username}</h2>
+                    <p className="text-gray-600 text-sm">{user?.email}</p>
                   </div>
                 </div>
               </div>
 
               <nav className="p-2">
                 <ul>
-                  {tabs.map((tab) => (
+                  {[
+                    { id: 'profile', label: 'Profile', icon: <FiUser /> },
+                    { id: 'orders', label: 'Orders', icon: <FiShoppingBag /> },
+                    { id: 'addresses', label: 'Addresses', icon: <FiMapPin /> },
+                    { id: 'payment', label: 'Payment Methods', icon: <FiCreditCard /> },
+                  ].map((tab) => (
                     <li key={tab.id}>
                       <button
                         onClick={() => setActiveTab(tab.id)}
