@@ -6,8 +6,7 @@ const ProtectedRoute = () => {
   const location = useLocation();
 
   // Only show loading indicator if we're actually checking auth status
-  // This prevents flickering on initial load
-  if (isLoading && localStorage.getItem('user')) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
