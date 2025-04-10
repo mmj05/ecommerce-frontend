@@ -13,7 +13,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
-//import Checkout from './pages/Checkout';
+import Checkout from './pages/Checkout';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 
@@ -70,7 +70,7 @@ function App() {
             
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
-              {/* <Route path="/checkout" element={<Checkout />} /> */}
+              <Route path="/checkout" element={<Checkout />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/orders" element={<Profile />} />
             </Route>
