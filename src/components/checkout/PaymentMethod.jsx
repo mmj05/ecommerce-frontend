@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { FiCreditCard, FiDollarSign, FiAlertCircle } from 'react-icons/fi';
+import StripeCheckout from './StripeCheckout';
 
-const PaymentMethod = ({ selectedMethod, onSelectMethod, onNextStep }) => {
+const PaymentMethod = ({ selectedMethod, onSelectMethod, onNextStep, orderTotal }) => {
   const [error, setError] = useState(null);
 
   // Available payment methods
@@ -18,17 +19,11 @@ const PaymentMethod = ({ selectedMethod, onSelectMethod, onNextStep }) => {
       method: 'credit_card',
       name: 'Credit/Debit Card',
       icon: <FiCreditCard />,
-      description: 'Pay securely with your credit or debit card',
-      disabled: true // Disabled for demo purposes
+      description: 'Pay securely with your credit or debit card'
     }
   ];
 
   const handleMethodSelect = (method) => {
-    if (method.disabled) {
-      setError('This payment method is not available at the moment. Please choose another one.');
-      return;
-    }
-    
     onSelectMethod(method);
     setError(null);
   };
@@ -61,13 +56,11 @@ const PaymentMethod = ({ selectedMethod, onSelectMethod, onNextStep }) => {
           <div 
             key={method.id} 
             className={`border rounded-lg p-4 cursor-pointer transition-all ${
-              method.disabled ? 'opacity-50 cursor-not-allowed' : (
-                selectedMethod && selectedMethod.id === method.id
-                  ? 'border-primary bg-blue-50'
-                  : 'border-gray-200 hover:border-primary'
-              )
+              selectedMethod && selectedMethod.id === method.id
+                ? 'border-primary bg-blue-50'
+                : 'border-gray-200 hover:border-primary'
             }`}
-            onClick={() => !method.disabled && handleMethodSelect(method)}
+            onClick={() => handleMethodSelect(method)}
           >
             <div className="flex items-center">
               <div className={`p-2 rounded-full mr-4 ${
@@ -80,9 +73,6 @@ const PaymentMethod = ({ selectedMethod, onSelectMethod, onNextStep }) => {
               <div className="flex-1">
                 <h3 className="font-medium text-gray-900">{method.name}</h3>
                 <p className="text-sm text-gray-600">{method.description}</p>
-                {method.disabled && (
-                  <p className="text-xs text-red-500 mt-1">Currently unavailable</p>
-                )}
               </div>
               {selectedMethod && selectedMethod.id === method.id && (
                 <div className="bg-primary text-white rounded-full p-1">
@@ -96,22 +86,30 @@ const PaymentMethod = ({ selectedMethod, onSelectMethod, onNextStep }) => {
         ))}
       </div>
       
-      {/* Note about payments */}
-      <div className="bg-gray-50 p-4 rounded-md mb-8">
-        <p className="text-sm text-gray-600">
-          <strong>Note:</strong> For demonstration purposes, only Cash on Delivery is available. 
-          In a real application, this would connect to payment processors like Stripe, PayPal, etc.
-        </p>
-      </div>
-      
-      {/* Continue button */}
-      <button
-        onClick={handleContinue}
-        className="w-full btn-primary py-3"
-        disabled={!selectedMethod}
-      >
-        Continue to Review
-      </button>
+      {/* Display appropriate payment button based on selection */}
+      {selectedMethod && (
+        <div className="mt-6">
+          {selectedMethod.id === 'credit_card' ? (
+            <StripeCheckout
+              amount={orderTotal}
+              onSuccess={() => {
+                // Handle successful payment
+                // This will be called after redirect back from Stripe
+              }}
+              onCancel={() => {
+                // Handle cancelled payment
+              }}
+            />
+          ) : (
+            <button
+              onClick={handleContinue}
+              className="w-full btn-primary py-3"
+            >
+              Continue to Review
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

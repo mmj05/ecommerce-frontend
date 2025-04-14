@@ -16,6 +16,8 @@ import ResetPassword from './pages/ResetPassword';
 import Checkout from './pages/Checkout';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentCancel from './pages/PaymentCancel';
 
 // Components
 import Header from './components/common/Header';
@@ -73,6 +75,8 @@ function App() {
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/orders" element={<Profile />} />
+              <Route path="/checkout/success" element={<PaymentSuccess />} />
+              <Route path="/checkout/cancel" element={<PaymentCancel />} />
             </Route>
             
             <Route path="*" element={<NotFound />} />

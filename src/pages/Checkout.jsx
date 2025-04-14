@@ -170,6 +170,15 @@ const Checkout = () => {
             </div>
           )}
 
+{currentStep === 1 && (
+  <AddressSelection 
+    addresses={addresses}
+    selectedAddress={selectedAddress}
+    onSelectAddress={handleAddressSelect}
+    onNextStep={goToNextStep}
+  />
+)}
+
           {/* Success message (for final step) */}
           {currentStep === 4 && success && (
             <div className="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded">

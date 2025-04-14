@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { FiPlus, FiMapPin, FiAlertCircle } from 'react-icons/fi';
 import { addAddress } from '../../features/address/addressSlice';
