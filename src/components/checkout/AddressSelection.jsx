@@ -7,7 +7,7 @@ const AddressSelection = ({ addresses, selectedAddress, onSelectAddress, onNextS
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [formData, setFormData] = useState({
     street: '',
-    buildingName: '',
+    apartmentNumber: '',
     city: '',
     state: '',
     country: '',
@@ -38,12 +38,7 @@ const AddressSelection = ({ addresses, selectedAddress, onSelectAddress, onNextS
     } else if (formData.street.length < 5) {
       errors.street = 'Street should have at least 5 characters';
     }
-    
-    if (!formData.buildingName.trim()) {
-      errors.buildingName = 'Building name is required';
-    } else if (formData.buildingName.length < 5) {
-      errors.buildingName = 'Building name should have at least 5 characters';
-    }
+
     
     if (!formData.city.trim()) {
       errors.city = 'City is required';
@@ -87,7 +82,7 @@ const AddressSelection = ({ addresses, selectedAddress, onSelectAddress, onNextS
         // Reset form and hide the form
         setFormData({
           street: '',
-          buildingName: '',
+          apartmentNumber: '',
           city: '',
           state: '',
           country: '',
@@ -137,7 +132,7 @@ const AddressSelection = ({ addresses, selectedAddress, onSelectAddress, onNextS
             >
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="font-medium">{address.buildingName}</p>
+                  <p className="font-medium">{address.apartmentNumber}</p>
                   <p className="text-gray-600 text-sm">{address.street}</p>
                   <p className="text-gray-600 text-sm">
                     {address.city}, {address.state} {address.zipCode}
@@ -170,25 +165,7 @@ const AddressSelection = ({ addresses, selectedAddress, onSelectAddress, onNextS
           <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Address</h3>
           
           <form onSubmit={handleAddressSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="buildingName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Building Name / Number
-                </label>
-                <input
-                  type="text"
-                  id="buildingName"
-                  name="buildingName"
-                  value={formData.buildingName}
-                  onChange={handleChange}
-                  className={`block w-full px-3 py-2 border ${
-                    formErrors.buildingName ? 'border-red-500' : 'border-gray-300'
-                  } rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
-                />
-                {formErrors.buildingName && (
-                  <p className="mt-1 text-sm text-red-500">{formErrors.buildingName}</p>
-                )}
-              </div>
+            
               
               <div>
                 <label htmlFor="street" className="block text-sm font-medium text-gray-700 mb-1">
@@ -206,6 +183,26 @@ const AddressSelection = ({ addresses, selectedAddress, onSelectAddress, onNextS
                 />
                 {formErrors.street && (
                   <p className="mt-1 text-sm text-red-500">{formErrors.street}</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="apartmentNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                Apt, suite, etc.
+                </label>
+                <input
+                  type="text"
+                  id="apartmentNumber"
+                  name="apartmentNumber"
+                  value={formData.apartmentNumber}
+                  onChange={handleChange}
+                  className={`block w-full px-3 py-2 border ${
+                    formErrors.apartmentNumber ? 'border-red-500' : 'border-gray-300'
+                  } rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary`}
+                />
+                {formErrors.buildingName && (
+                  <p className="mt-1 text-sm text-red-500">{formErrors.buildingName}</p>
                 )}
               </div>
               

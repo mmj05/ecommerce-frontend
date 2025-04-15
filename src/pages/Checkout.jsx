@@ -1,47 +1,63 @@
-import { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet';
-import { FiArrowLeft, FiShoppingBag, FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
+import { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet";
+import {
+  FiArrowLeft,
+  FiShoppingBag,
+  FiAlertCircle,
+  FiCheckCircle,
+} from "react-icons/fi";
 
 // Components
-import CheckoutSteps from '../components/checkout/CheckoutSteps';
-import AddressSelection from '../components/checkout/AddressSelection';
-import PaymentMethod from '../components/checkout/PaymentMethod';
-import OrderSummary from '../components/checkout/OrderSummary';
-import OrderConfirmation from '../components/checkout/OrderConfirmation';
+import CheckoutSteps from "../components/checkout/CheckoutSteps";
+import AddressSelection from "../components/checkout/AddressSelection";
+import PaymentMethod from "../components/checkout/PaymentMethod";
+import OrderSummary from "../components/checkout/OrderSummary";
+import OrderConfirmation from "../components/checkout/OrderConfirmation";
 
 // Redux actions
-import { getCart, clearCart } from '../features/cart/cartSlice';
-import { getAddresses } from '../features/address/addressSlice';
-import { createOrder, resetOrderState } from '../features/orders/orderSlice';
+import { getCart, clearCart } from "../features/cart/cartSlice";
+import { getAddresses } from "../features/address/addressSlice";
+import { createOrder, resetOrderState } from "../features/orders/orderSlice";
 
 const Checkout = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState(null);
-  const [orderNote, setOrderNote] = useState('');
+  const [orderNote, setOrderNote] = useState("");
   const [error, setError] = useState(null);
-  
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  
-  const { cartItems, totalPrice, isLoading: cartLoading } = useSelector((state) => state.cart);
-  const { addresses, isLoading: addressesLoading } = useSelector((state) => state.address);
-  const { order, isLoading: orderLoading, success, error: orderError } = useSelector((state) => state.order);
+
+  const {
+    cartItems,
+    totalPrice,
+    isLoading: cartLoading,
+  } = useSelector((state) => state.cart);
+  const { addresses, isLoading: addressesLoading } = useSelector(
+    (state) => state.address
+  );
+  const {
+    order,
+    isLoading: orderLoading,
+    success,
+    error: orderError,
+  } = useSelector((state) => state.order);
   const { isAuthenticated } = useSelector((state) => state.auth);
 
   useEffect(() => {
     // Redirect to login if not authenticated
     if (!isAuthenticated) {
-      navigate('/login', { state: { from: '/checkout' } });
+      navigate("/login", { state: { from: "/checkout" } });
       return;
     }
-    
+
     // Load cart and addresses
     dispatch(getCart());
     dispatch(getAddresses());
-    
+
     // Reset order state when component mounts
     dispatch(resetOrderState());
   }, [dispatch, isAuthenticated, navigate]);
@@ -49,7 +65,7 @@ const Checkout = () => {
   // Redirect to cart if it's empty
   useEffect(() => {
     if (!cartLoading && cartItems.length === 0) {
-      navigate('/cart');
+      navigate("/cart");
     }
   }, [cartItems, cartLoading, navigate]);
 
@@ -81,7 +97,7 @@ const Checkout = () => {
       setCurrentStep(currentStep - 1);
       window.scrollTo(0, 0);
     } else {
-      navigate('/cart');
+      navigate("/cart");
     }
   };
 
@@ -97,12 +113,12 @@ const Checkout = () => {
 
   const handlePlaceOrder = () => {
     if (!selectedAddress) {
-      setError('Please select a shipping address');
+      setError("Please select a shipping address");
       return;
     }
 
     if (!paymentMethod) {
-      setError('Please select a payment method');
+      setError("Please select a payment method");
       return;
     }
 
@@ -110,10 +126,10 @@ const Checkout = () => {
     const orderData = {
       addressId: selectedAddress.addressId,
       paymentMethod: paymentMethod.method,
-      pgName: paymentMethod.name || 'COD', // Cash on Delivery as default
-      pgPaymentId: paymentMethod.id || 'NA',
-      pgStatus: 'pending',
-      pgResponseMessage: 'Order placed'
+      pgName: paymentMethod.name || "COD", // Cash on Delivery as default
+      pgPaymentId: paymentMethod.id || "NA",
+      pgStatus: "pending",
+      pgResponseMessage: "Order placed",
     };
 
     // Dispatch create order action
@@ -139,7 +155,10 @@ const Checkout = () => {
     <>
       <Helmet>
         <title>Checkout | ShopEasy</title>
-        <meta name="description" content="Complete your purchase and place your order" />
+        <meta
+          name="description"
+          content="Complete your purchase and place your order"
+        />
       </Helmet>
 
       <div className="bg-gray-50 py-8">
@@ -150,14 +169,14 @@ const Checkout = () => {
               onClick={goToPreviousStep}
               className="flex items-center text-gray-600 hover:text-primary mb-6"
             >
-              <FiArrowLeft className="mr-2" /> 
-              {currentStep === 1 ? 'Back to Cart' : 'Back to Previous Step'}
+              <FiArrowLeft className="mr-2" />
+              {currentStep === 1 ? "Back to Cart" : "Back to Previous Step"}
             </button>
           )}
 
           {/* Page title */}
           <h1 className="text-3xl font-bold text-gray-900 mb-8">
-            {currentStep === 4 ? 'Order Confirmation' : 'Checkout'}
+            {currentStep === 4 ? "Order Confirmation" : "Checkout"}
           </h1>
 
           {/* Error message */}
@@ -170,35 +189,35 @@ const Checkout = () => {
             </div>
           )}
 
-{currentStep === 1 && (
-  <AddressSelection 
-    addresses={addresses}
-    selectedAddress={selectedAddress}
-    onSelectAddress={handleAddressSelect}
-    onNextStep={goToNextStep}
-  />
-)}
+          {/* {currentStep === 1 && (
+            <AddressSelection
+              addresses={addresses}
+              selectedAddress={selectedAddress}
+              onSelectAddress={handleAddressSelect}
+              onNextStep={goToNextStep}
+            />
+          )} */}
 
           {/* Success message (for final step) */}
           {currentStep === 4 && success && (
             <div className="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded">
               <div className="flex items-center">
                 <FiCheckCircle className="text-green-500 mr-3" />
-                <p className="text-green-700">Your order has been placed successfully!</p>
+                <p className="text-green-700">
+                  Your order has been placed successfully!
+                </p>
               </div>
             </div>
           )}
 
-          {currentStep < 4 && (
-            <CheckoutSteps currentStep={currentStep} />
-          )}
+          {currentStep < 4 && <CheckoutSteps currentStep={currentStep} />}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
             {/* Main content area */}
             <div className="lg:col-span-2">
               {/* Show different step content based on currentStep */}
               {currentStep === 1 && (
-                <AddressSelection 
+                <AddressSelection
                   addresses={addresses}
                   selectedAddress={selectedAddress}
                   onSelectAddress={handleAddressSelect}
@@ -216,50 +235,77 @@ const Checkout = () => {
 
               {currentStep === 3 && (
                 <div className="bg-white rounded-lg shadow-sm p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Review & Place Order</h2>
-                  
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                    Review & Place Order
+                  </h2>
+
                   {/* Order summary for review */}
                   <div className="mb-6">
-                    <h3 className="font-medium text-gray-900 mb-2">Order Items</h3>
+                    <h3 className="font-medium text-gray-900 mb-2">
+                      Order Items
+                    </h3>
                     <div className="bg-gray-50 p-4 rounded">
                       {cartItems.map((item) => (
-                        <div key={item.productId} className="flex justify-between py-2 border-b border-gray-200 last:border-0">
+                        <div
+                          key={item.productId}
+                          className="flex justify-between py-2 border-b border-gray-200 last:border-0"
+                        >
                           <div>
-                            <span className="font-medium">{item.productName}</span>
-                            <span className="text-gray-600 text-sm ml-2">× {item.quantity}</span>
+                            <span className="font-medium">
+                              {item.productName}
+                            </span>
+                            <span className="text-gray-600 text-sm ml-2">
+                              × {item.quantity}
+                            </span>
                           </div>
-                          <span>${((item.specialPrice || item.price) * item.quantity).toFixed(2)}</span>
+                          <span>
+                            $
+                            {(
+                              (item.specialPrice || item.price) * item.quantity
+                            ).toFixed(2)}
+                          </span>
                         </div>
                       ))}
                     </div>
                   </div>
-                  
+
                   {/* Shipping address review */}
                   {selectedAddress && (
                     <div className="mb-6">
-                      <h3 className="font-medium text-gray-900 mb-2">Shipping Address</h3>
+                      <h3 className="font-medium text-gray-900 mb-2">
+                        Shipping Address
+                      </h3>
                       <div className="bg-gray-50 p-4 rounded">
-                        <p className="font-medium">{selectedAddress.buildingName}</p>
+                        <p className="font-medium">
+                          {selectedAddress.buildingName}
+                        </p>
                         <p>{selectedAddress.street}</p>
-                        <p>{selectedAddress.city}, {selectedAddress.state} {selectedAddress.zipCode}</p>
+                        <p>
+                          {selectedAddress.city}, {selectedAddress.state}{" "}
+                          {selectedAddress.zipCode}
+                        </p>
                         <p>{selectedAddress.country}</p>
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Payment method review */}
                   {paymentMethod && (
                     <div className="mb-6">
-                      <h3 className="font-medium text-gray-900 mb-2">Payment Method</h3>
+                      <h3 className="font-medium text-gray-900 mb-2">
+                        Payment Method
+                      </h3>
                       <div className="bg-gray-50 p-4 rounded">
                         <p>{paymentMethod.name}</p>
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Order notes */}
                   <div className="mb-6">
-                    <h3 className="font-medium text-gray-900 mb-2">Order Notes (Optional)</h3>
+                    <h3 className="font-medium text-gray-900 mb-2">
+                      Order Notes (Optional)
+                    </h3>
                     <textarea
                       value={orderNote}
                       onChange={(e) => setOrderNote(e.target.value)}
@@ -268,20 +314,20 @@ const Checkout = () => {
                       placeholder="Add any special instructions or notes for your order"
                     ></textarea>
                   </div>
-                  
+
                   {/* Place order button */}
                   <button
                     onClick={handlePlaceOrder}
                     disabled={orderLoading}
                     className="w-full btn-primary py-3 flex items-center justify-center"
                   >
-                    {orderLoading ? 'Processing...' : 'Place Order'}
+                    {orderLoading ? "Processing..." : "Place Order"}
                   </button>
                 </div>
               )}
 
               {currentStep === 4 && (
-                <OrderConfirmation 
+                <OrderConfirmation
                   order={order}
                   selectedAddress={selectedAddress}
                   paymentMethod={paymentMethod}
@@ -292,7 +338,7 @@ const Checkout = () => {
             {/* Order summary sidebar */}
             <div className="lg:col-span-1">
               {currentStep < 4 && (
-                <OrderSummary 
+                <OrderSummary
                   cartItems={cartItems}
                   subtotal={subtotal}
                   shipping={shipping}
@@ -300,49 +346,67 @@ const Checkout = () => {
                   total={orderTotal}
                 />
               )}
-              
+
               {currentStep === 4 && order && (
                 <div className="bg-white rounded-lg shadow-sm p-6 sticky top-20">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6">Order Information</h2>
-                  
+                  <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                    Order Information
+                  </h2>
+
                   <div className="space-y-4">
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500">Order Number</h3>
-                      <p className="text-gray-900 font-medium">#{order.orderId}</p>
+                      <h3 className="text-sm font-medium text-gray-500">
+                        Order Number
+                      </h3>
+                      <p className="text-gray-900 font-medium">
+                        #{order.orderId}
+                      </p>
                     </div>
-                    
+
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500">Order Date</h3>
+                      <h3 className="text-sm font-medium text-gray-500">
+                        Order Date
+                      </h3>
                       <p className="text-gray-900">
-                        {new Date(order.orderDate).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
+                        {new Date(order.orderDate).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
                         })}
                       </p>
                     </div>
-                    
+
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500">Order Status</h3>
+                      <h3 className="text-sm font-medium text-gray-500">
+                        Order Status
+                      </h3>
                       <p className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         {order.orderStatus}
                       </p>
                     </div>
-                    
+
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500">Payment Method</h3>
-                      <p className="text-gray-900">{order.paymentDTO?.paymentMethod || 'Cash on Delivery'}</p>
+                      <h3 className="text-sm font-medium text-gray-500">
+                        Payment Method
+                      </h3>
+                      <p className="text-gray-900">
+                        {order.paymentDTO?.paymentMethod || "Cash on Delivery"}
+                      </p>
                     </div>
-                    
+
                     <div className="pt-4 border-t border-gray-200">
-                      <h3 className="text-sm font-medium text-gray-500">Total Amount</h3>
-                      <p className="text-2xl font-bold text-primary">${order.totalAmount?.toFixed(2)}</p>
+                      <h3 className="text-sm font-medium text-gray-500">
+                        Total Amount
+                      </h3>
+                      <p className="text-2xl font-bold text-primary">
+                        ${order.totalAmount?.toFixed(2)}
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div className="mt-8">
-                    <button 
-                      onClick={() => navigate('/products')} 
+                    <button
+                      onClick={() => navigate("/products")}
                       className="w-full btn-primary flex items-center justify-center"
                     >
                       <FiShoppingBag className="mr-2" /> Continue Shopping
