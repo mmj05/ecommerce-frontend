@@ -1,3 +1,4 @@
+// src/components/checkout/PaymentMethod.jsx
 import { useState } from 'react';
 import { FiCreditCard, FiDollarSign, FiAlertCircle } from 'react-icons/fi';
 import StripeCheckout from './StripeCheckout';
@@ -5,18 +6,18 @@ import StripeCheckout from './StripeCheckout';
 const PaymentMethod = ({ selectedMethod, onSelectMethod, onNextStep, orderTotal }) => {
   const [error, setError] = useState(null);
 
-  // Available payment methods
+  // Available payment methods - Updated for 4+ character paymentMethod values
   const paymentMethods = [
     {
       id: 'cod',
-      method: 'cod',
+      method: 'cash', // Changed from 'cod' to 'cash' to meet 4-char minimum
       name: 'Cash on Delivery',
       icon: <FiDollarSign />,
       description: 'Pay with cash when your order is delivered'
     },
     {
       id: 'credit_card',
-      method: 'credit_card',
+      method: 'card', // Changed from 'credit_card' to 'card' for simplicity
       name: 'Credit/Debit Card',
       icon: <FiCreditCard />,
       description: 'Pay securely with your credit or debit card'
@@ -34,6 +35,15 @@ const PaymentMethod = ({ selectedMethod, onSelectMethod, onNextStep, orderTotal 
     } else {
       setError('Please select a payment method');
     }
+  };
+
+  // Success and cancel handlers for the Stripe checkout
+  const handlePaymentSuccess = () => {
+    onNextStep();
+  };
+
+  const handlePaymentCancel = () => {
+    setError('Payment was cancelled or failed. Please try again.');
   };
 
   return (
@@ -92,13 +102,9 @@ const PaymentMethod = ({ selectedMethod, onSelectMethod, onNextStep, orderTotal 
           {selectedMethod.id === 'credit_card' ? (
             <StripeCheckout
               amount={orderTotal}
-              onSuccess={() => {
-                // Handle successful payment
-                // This will be called after redirect back from Stripe
-              }}
-              onCancel={() => {
-                // Handle cancelled payment
-              }}
+              orderTotal={orderTotal}
+              onSuccess={handlePaymentSuccess}
+              onCancel={handlePaymentCancel}
             />
           ) : (
             <button
