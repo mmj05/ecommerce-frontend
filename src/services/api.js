@@ -1,3 +1,5 @@
+// src/services/api.js - Updated to properly handle auth
+
 import axios from 'axios';
 
 // Create an axios instance
@@ -12,7 +14,18 @@ const api = axios.create({
 // Add request interceptor for handling auth
 api.interceptors.request.use(
   (config) => {
-    // You can add token logic here if needed, though you're using cookies
+    // Check for JWT in localStorage
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const token = user.jwtToken;
+    
+    // If token exists, add it to Authorization header
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    // Ensure credentials are included
+    config.withCredentials = true;
+    
     return config;
   },
   (error) => {
@@ -24,13 +37,15 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Handle 401 Unauthorized errors
     if (error.response && error.response.status === 401) {
-      // Instead of directly redirecting, let Redux handle this
-      // This prevents automatic redirects during app initialization
-      console.log('401 Unauthorized - Not automatically redirecting');
-      // We could dispatch a logout action here if needed
-      // store.dispatch(logout());
+      console.error('Authentication error:', error.response.data);
+      
+      // You could dispatch a logout action here if needed
+      // localStorage.removeItem('user');
+      // window.location.href = '/login';
     }
+    
     return Promise.reject(error);
   }
 );
