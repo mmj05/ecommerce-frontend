@@ -111,29 +111,45 @@ const Checkout = () => {
     setError(null);
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!selectedAddress) {
       setError("Please select a shipping address");
       return;
     }
-
+  
     if (!paymentMethod) {
       setError("Please select a payment method");
       return;
     }
-
-    // Prepare order data
+  
+    // Prepare order data - Make sure paymentMethod is at least 4 characters
     const orderData = {
       addressId: selectedAddress.addressId,
-      paymentMethod: paymentMethod.method,
-      pgName: paymentMethod.name || "COD", // Cash on Delivery as default
-      pgPaymentId: paymentMethod.id || "NA",
+      // Change "cod" to "cash" (4 characters) to meet validation requirements
+      paymentMethod: paymentMethod.id === 'cod' ? 'cash' : 'card',
+      pgName: paymentMethod.id === 'credit_card' ? 'Stripe' : 'COD',
+      pgPaymentId: paymentMethod.id === 'credit_card' ? 'stripe_session_placeholder' : 'NA',
       pgStatus: "pending",
-      pgResponseMessage: "Order placed",
+      pgResponseMessage: orderNote || "Order placed",
     };
-
-    // Dispatch create order action
-    dispatch(createOrder(orderData));
+  
+    console.log('Submitting order with data:', orderData);
+  
+    try {
+      // For COD payment, place the order directly
+      if (paymentMethod.id === 'cod') {
+        await dispatch(createOrder(orderData)).unwrap();
+      } 
+      // For credit card, we'll handle with Stripe checkout
+      else if (paymentMethod.id === 'credit_card') {
+        // Store order data in sessionStorage for after Stripe redirect
+        sessionStorage.setItem('pendingOrderData', JSON.stringify(orderData));
+        // The actual Stripe checkout is handled in the StripeCheckout component
+      }
+    } catch (err) {
+      console.error("Failed to place order:", err);
+      setError(err.message || "Failed to place order. Please try again.");
+    }
   };
 
   // Calculate order summary values
