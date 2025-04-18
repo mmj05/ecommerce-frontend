@@ -1,3 +1,4 @@
+// src/features/orders/orderSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import orderService from '../../services/orderService';
 
@@ -12,11 +13,34 @@ const initialState = {
 // Create a new order
 export const createOrder = createAsyncThunk(
   'orders/createOrder',
-  async (orderData, { rejectWithValue }) => {
+  async (orderData, { rejectWithValue, getState }) => {
     try {
-      return await orderService.createOrder(orderData);
+      // Get auth state to check authentication
+      const { auth } = getState();
+      if (!auth.isAuthenticated) {
+        return rejectWithValue('You must be logged in to place an order.');
+      }
+      
+      // Ensure the data format matches what the backend expects
+      // Create the proper order request object
+      const orderRequest = {
+        addressId: orderData.addressId,
+        // The rest are for payment information
+        pgName: orderData.pgName || 'NA',
+        pgPaymentId: orderData.pgPaymentId || 'NA', 
+        pgStatus: orderData.pgStatus || 'pending',
+        pgResponseMessage: orderData.pgResponseMessage || 'Order placed'
+      };
+      
+      console.log('Creating order with request:', orderRequest);
+      
+      // Pass paymentMethod separately as it's used in the URL path
+      const paymentMethod = orderData.paymentMethod || 'cod';
+      
+      return await orderService.createOrder(orderRequest, paymentMethod);
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to create order. Please try again.');
+      console.error('Error in createOrder thunk:', error);
+      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to create order. Please try again.');
     }
   }
 );
@@ -24,11 +48,17 @@ export const createOrder = createAsyncThunk(
 // Get all orders for the current user
 export const getUserOrders = createAsyncThunk(
   'orders/getUserOrders',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
+      // Get auth state to check authentication
+      const { auth } = getState();
+      if (!auth.isAuthenticated) {
+        return rejectWithValue('You must be logged in to view orders.');
+      }
+      
       return await orderService.getUserOrders();
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch orders');
+      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch orders');
     }
   }
 );
@@ -36,11 +66,17 @@ export const getUserOrders = createAsyncThunk(
 // Get order details by ID
 export const getOrderById = createAsyncThunk(
   'orders/getOrderById',
-  async (orderId, { rejectWithValue }) => {
+  async (orderId, { rejectWithValue, getState }) => {
     try {
+      // Get auth state to check authentication
+      const { auth } = getState();
+      if (!auth.isAuthenticated) {
+        return rejectWithValue('You must be logged in to view order details.');
+      }
+      
       return await orderService.getOrderById(orderId);
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch order details');
+      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch order details');
     }
   }
 );
@@ -56,6 +92,9 @@ const orderSlice = createSlice({
       state.success = false;
       state.error = null;
     },
+    clearOrderError: (state) => {
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -69,11 +108,13 @@ const orderSlice = createSlice({
         state.isLoading = false;
         state.success = true;
         state.order = action.payload;
+        console.log('Order created successfully:', action.payload);
       })
       .addCase(createOrder.rejected, (state, action) => {
         state.isLoading = false;
         state.success = false;
         state.error = action.payload;
+        console.error('Order creation rejected:', action.payload);
       })
       
       // Get user orders
@@ -106,5 +147,5 @@ const orderSlice = createSlice({
   },
 });
 
-export const { resetOrderState } = orderSlice.actions;
+export const { resetOrderState, clearOrderError } = orderSlice.actions;
 export default orderSlice.reducer;
