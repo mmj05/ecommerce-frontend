@@ -15,15 +15,32 @@ const initialState = {
   error: null,
 };
 
-// Login user
+// Login user action in auth/authSlice.js
 export const login = createAsyncThunk(
   'auth/login',
   async (userData, { rejectWithValue }) => {
     try {
       const response = await authService.login(userData);
-      // Store user in localStorage
-      localStorage.setItem('user', JSON.stringify(response));
-      return response;
+      
+      // Log the response to see what we're getting
+      console.log('Login response:', response);
+      
+      // Make sure jwtToken is properly extracted from the response
+      const processedResponse = {
+        ...response,
+        // If jwtToken isn't already included, try to get it from headers or response
+        jwtToken: response.jwtToken || 
+                  response.token || 
+                  response.accessToken ||
+                  (response.headers && response.headers.authorization)
+      };
+      
+      console.log('Processed response:', processedResponse);
+      
+      // Store user in localStorage with token
+      localStorage.setItem('user', JSON.stringify(processedResponse));
+      
+      return processedResponse;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Login failed. Please check your credentials.');
     }
