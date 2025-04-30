@@ -11,6 +11,7 @@ const initialState = {
   totalPrice: storedCart.totalPrice || 0,
   isLoading: false,
   error: null,
+  cartUpdated: 0, // Add a counter for tracking cart updates
 };
 
 // Get cart for authenticated user
@@ -22,8 +23,8 @@ export const getCart = createAsyncThunk(
       const { auth } = getState();
       if (auth.isAuthenticated) {
         try {
-          // Add a timeout to prevent rapid successive API calls
           const response = await cartService.getCart();
+          console.log('GetCart response:', response);
           return response;
         } catch (error) {
           // If the API call fails for an authenticated user (e.g., no cart exists),
@@ -56,12 +57,26 @@ export const addToCart = createAsyncThunk(
   'cart/addToCart',
   async ({ productId, quantity }, { rejectWithValue, getState, dispatch }) => {
     try {
+      console.log(`Adding product ID ${productId} with quantity ${quantity} to cart`);
+      
       const { auth } = getState();
       if (auth.isAuthenticated) {
         // Add to server cart if authenticated
         const response = await cartService.addToCart(productId, quantity);
         console.log('Server response after adding to cart:', response);
-        return response; // Ensure we're returning the complete server response
+        
+        // Always reload cart from server after adding items to ensure state consistency
+        if (response) {
+          try {
+            const updatedCart = await cartService.getCart();
+            console.log('Updated cart after adding item:', updatedCart);
+            return updatedCart; // Return the full updated cart
+          } catch (err) {
+            console.warn('Error fetching updated cart, using response data:', err);
+            return response;
+          }
+        }
+        return response;
       } else {
         // For guest users, add to local cart
         const { products } = getState();
@@ -95,7 +110,6 @@ export const addToCart = createAsyncThunk(
     }
   }
 );
-
 
 // Update cart item quantity
 export const updateCartItem = createAsyncThunk(
@@ -248,6 +262,8 @@ const cartSlice = createSlice({
     clearCart: (state) => {
       state.cartItems = [];
       state.totalPrice = 0;
+      // Increment the cartUpdated counter to trigger Header refresh
+      state.cartUpdated += 1;
       // Clear guest cart from localStorage
       localStorage.removeItem('guestCart');
     },
@@ -309,6 +325,9 @@ const cartSlice = createSlice({
             state.totalPrice = action.payload.totalPrice || 0;
           }
         }
+        
+        // Increment the cartUpdated counter to trigger Header refresh
+        state.cartUpdated += 1;
       })
       .addCase(addToCart.rejected, (state, action) => {
         state.isLoading = false;
@@ -353,6 +372,9 @@ const cartSlice = createSlice({
           state.cartItems = action.payload.products || [];
           state.totalPrice = action.payload.totalPrice || 0;
         }
+        
+        // Increment the cartUpdated counter to trigger Header refresh
+        state.cartUpdated += 1;
       })
       .addCase(updateCartItem.rejected, (state, action) => {
         state.isLoading = false;
@@ -394,6 +416,9 @@ const cartSlice = createSlice({
             state.totalPrice = 0;
           }
         }
+        
+        // Increment the cartUpdated counter to trigger Header refresh
+        state.cartUpdated += 1;
       })
       .addCase(removeFromCart.rejected, (state, action) => {
         state.isLoading = false;
@@ -411,6 +436,8 @@ const cartSlice = createSlice({
         state.totalPrice = action.payload.totalPrice || 0;
         // Clear guest cart
         localStorage.removeItem('guestCart');
+        // Increment the cartUpdated counter to trigger Header refresh
+        state.cartUpdated += 1;
       })
       .addCase(mergeCart.rejected, (state, action) => {
         state.isLoading = false;
