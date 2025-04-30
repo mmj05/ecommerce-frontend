@@ -78,14 +78,12 @@ const Checkout = () => {
     }
   }, [orderError]);
 
-  // Clear cart and redirect to order confirmation page when order is successful
+  // Handle successful order
   useEffect(() => {
     if (success && order) {
-      setCurrentStep(4); // Move to confirmation step
-      dispatch(clearCart()); // Clear the cart
-      window.scrollTo(0, 0);
+      navigate('/checkout/success');
     }
-  }, [success, order, dispatch]);
+  }, [success, order, navigate]);
 
   const goToNextStep = () => {
     setCurrentStep(currentStep + 1);
@@ -122,13 +120,12 @@ const Checkout = () => {
       return;
     }
   
-    // Prepare order data - Make sure paymentMethod is at least 4 characters
+    // Prepare order data for Cash on Delivery
     const orderData = {
       addressId: selectedAddress.addressId,
-      // Change "cod" to "cash" (4 characters) to meet validation requirements
-      paymentMethod: paymentMethod.id === 'cod' ? 'cash' : 'card',
-      pgName: paymentMethod.id === 'credit_card' ? 'Stripe' : 'COD',
-      pgPaymentId: paymentMethod.id === 'credit_card' ? 'stripe_session_placeholder' : 'NA',
+      paymentMethod: 'cash', // 4 characters minimum for validation
+      pgName: 'COD',
+      pgPaymentId: 'NA',
       pgStatus: "pending",
       pgResponseMessage: orderNote || "Order placed",
     };
@@ -136,16 +133,11 @@ const Checkout = () => {
     console.log('Submitting order with data:', orderData);
   
     try {
-      // For COD payment, place the order directly
-      if (paymentMethod.id === 'cod') {
-        await dispatch(createOrder(orderData)).unwrap();
-      } 
-      // For credit card, we'll handle with Stripe checkout
-      else if (paymentMethod.id === 'credit_card') {
-        // Store order data in sessionStorage for after Stripe redirect
-        sessionStorage.setItem('pendingOrderData', JSON.stringify(orderData));
-        // The actual Stripe checkout is handled in the StripeCheckout component
-      }
+      const result = await dispatch(createOrder(orderData)).unwrap();
+      console.log('Order creation successful:', result);
+      
+      // Navigate to success page after successful order
+      navigate('/checkout/success');
     } catch (err) {
       console.error("Failed to place order:", err);
       setError(err.message || "Failed to place order. Please try again.");
@@ -205,15 +197,6 @@ const Checkout = () => {
             </div>
           )}
 
-          {/* {currentStep === 1 && (
-            <AddressSelection
-              addresses={addresses}
-              selectedAddress={selectedAddress}
-              onSelectAddress={handleAddressSelect}
-              onNextStep={goToNextStep}
-            />
-          )} */}
-
           {/* Success message (for final step) */}
           {currentStep === 4 && success && (
             <div className="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded">
@@ -246,6 +229,7 @@ const Checkout = () => {
                   selectedMethod={paymentMethod}
                   onSelectMethod={handlePaymentMethodSelect}
                   onNextStep={goToNextStep}
+                  orderTotal={orderTotal}
                 />
               )}
 
@@ -292,9 +276,7 @@ const Checkout = () => {
                         Shipping Address
                       </h3>
                       <div className="bg-gray-50 p-4 rounded">
-                        <p className="font-medium">
-                          {selectedAddress.buildingName}
-                        </p>
+                        <p>{selectedAddress.apartmentNumber}</p>
                         <p>{selectedAddress.street}</p>
                         <p>
                           {selectedAddress.city}, {selectedAddress.state}{" "}
