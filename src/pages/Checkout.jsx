@@ -81,9 +81,20 @@ const Checkout = () => {
   // Handle successful order
   useEffect(() => {
     if (success && order) {
+      // Store order ID in localStorage before redirecting
+      // This helps prevent direct access to success page without an order
+      localStorage.setItem('lastOrderId', order.orderId);
       navigate('/checkout/success');
     }
   }, [success, order, navigate]);
+
+  // When component unmounts, reset order state
+  useEffect(() => {
+    return () => {
+      // Reset order state when leaving checkout
+      dispatch(resetOrderState());
+    };
+  }, [dispatch]);
 
   const goToNextStep = () => {
     setCurrentStep(currentStep + 1);
@@ -136,8 +147,13 @@ const Checkout = () => {
       const result = await dispatch(createOrder(orderData)).unwrap();
       console.log('Order creation successful:', result);
       
-      // Navigate to success page after successful order
-      navigate('/checkout/success');
+      // Store the full order in localStorage
+      if (result) {
+        localStorage.setItem('lastOrder', JSON.stringify(result));
+      }
+      
+      // Use window.location to force a fresh page load to the success page
+      window.location.href = '/checkout/success';
     } catch (err) {
       console.error("Failed to place order:", err);
       setError(err.message || "Failed to place order. Please try again.");
