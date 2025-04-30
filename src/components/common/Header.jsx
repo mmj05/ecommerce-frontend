@@ -10,15 +10,15 @@ const Header = () => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { isAuthenticated, user } = useSelector((state) => state.auth);
-  const { cartItems } = useSelector((state) => state.cart);
+  const { cartItems, cartUpdated } = useSelector((state) => state.cart);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const profileMenuRef = useRef(null);
 
-  // Fetch cart data when component mounts
+  // Fetch cart data when component mounts or cart is updated
   useEffect(() => {
     dispatch(getCart());
-  }, [dispatch, isAuthenticated]); // Re-fetch when authentication status changes
+  }, [dispatch, isAuthenticated, cartUpdated]); // Re-fetch when authentication status or cart updates
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
