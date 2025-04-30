@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { FiShoppingCart, FiMinus, FiPlus, FiCheck, FiArrowLeft } from 'react-icons/fi';
-import { addToCart } from '../../features/cart/cartSlice';
+import { addToCart, getCart } from '../../features/cart/cartSlice';
 import { fetchProductDetails } from '../../features/products/productSlice';
 
 const ProductDetails = () => {
@@ -14,18 +14,33 @@ const ProductDetails = () => {
   const navigate = useNavigate();
 
   const { product, isLoading, error } = useSelector((state) => state.products);
+  const { cartItems, cartUpdated } = useSelector((state) => state.cart);
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  
+  // Check if product is already in cart - always convert to string for reliable comparison
+  const isInCart = product && cartItems.some(item => String(item.productId) === String(product.productId));
+  const cartItem = product ? cartItems.find(item => String(item.productId) === String(product.productId)) : null;
 
+  // Fetch product details and cart data when component mounts
   useEffect(() => {
-    // Fetch product details when component mounts
     if (id) {
       dispatch(fetchProductDetails(id));
     }
+    
+    // Also get the latest cart data
+    dispatch(getCart());
     
     // Reset state when component mounts
     setQuantity(1);
     setIsAdding(false);
     setIsAdded(false);
   }, [dispatch, id]);
+  
+  // Update cart item detection when cartUpdated changes
+  useEffect(() => {
+    // This will refresh the detection of items in cart whenever the cart is updated
+    console.log('Cart updated, refreshing cart items detection');
+  }, [cartUpdated]);
 
   const handleQuantityChange = (action) => {
     if (action === 'increase' && quantity < (product?.quantity || 0)) {
@@ -35,15 +50,33 @@ const ProductDetails = () => {
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!product || isAdding || product.quantity === 0) return;
     
     setIsAdding(true);
     
-    dispatch(addToCart({ 
-      productId: product.productId, 
-      quantity 
-    })).then(() => {
+    // Log detailed debugging information
+    console.log('Adding to cart:', {
+      productId: product.productId,
+      quantity: quantity,
+      isInCart: isInCart,
+      currentCartItems: cartItems.map(item => ({
+        id: item.productId,
+        name: item.productName,
+        qty: item.quantity
+      }))
+    });
+    
+    try {
+      // Add to cart and wait for completion
+      await dispatch(addToCart({ 
+        productId: product.productId, 
+        quantity 
+      })).unwrap();
+      
+      // Force a refresh of the cart data
+      await dispatch(getCart()).unwrap();
+      
       // Show success feedback
       setIsAdded(true);
       
@@ -52,9 +85,10 @@ const ProductDetails = () => {
         setIsAdded(false);
         setIsAdding(false);
       }, 2000);
-    }).catch(() => {
+    } catch (error) {
+      console.error('Error adding to cart:', error);
       setIsAdding(false);
-    });
+    }
   };
 
   const handleGoBack = () => {
@@ -165,6 +199,15 @@ const ProductDetails = () => {
             )}
           </div>
 
+          {/* Cart Status - new section */}
+          {isInCart && cartItem && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-700">
+              <p className="text-sm font-medium">
+                You already have {cartItem.quantity} of this item in your cart.
+              </p>
+            </div>
+          )}
+
           {/* Quantity Selector */}
           {product.quantity > 0 && (
             <div className="flex items-center space-x-4 mb-6">
@@ -201,11 +244,11 @@ const ProductDetails = () => {
           >
             {isAdded ? (
               <>
-                <FiCheck /> Added to Cart
+                <FiCheck /> {isInCart ? 'Added More to Cart' : 'Added to Cart'}
               </>
             ) : (
               <>
-                <FiShoppingCart /> {isAdding ? 'Adding...' : 'Add to Cart'}
+                <FiShoppingCart /> {isAdding ? 'Adding...' : isInCart ? `Add ${quantity} More to Cart` : 'Add to Cart'}
               </>
             )}
           </button>
