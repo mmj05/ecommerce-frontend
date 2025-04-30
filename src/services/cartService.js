@@ -5,6 +5,7 @@ const cartService = {
   getCart: async () => {
     try {
       const response = await api.get('/carts/users/cart');
+      console.log('Cart data from server:', response.data);
       return response.data;
     } catch (error) {
       // Handle 404 (cart not found) or other common errors
@@ -23,7 +24,13 @@ const cartService = {
   // Add product to cart
   addToCart: async (productId, quantity) => {
     try {
-      const response = await api.post(`/carts/products/${productId}/quantity/${quantity}`);
+      console.log(`Adding product ID ${productId} with quantity ${quantity} to cart via API`);
+      // Ensure productId is properly formatted
+      const formattedProductId = String(productId).trim();
+      const formattedQuantity = Number(quantity);
+      
+      const response = await api.post(`/carts/products/${formattedProductId}/quantity/${formattedQuantity}`);
+      console.log('Response from adding to cart:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error adding to cart:', error);
@@ -52,9 +59,6 @@ const cartService = {
       throw error;
     }
   },
-
-  // Delete empty cart
-  // Update the deleteEmptyCart method in cartService.js
 
   // Delete empty cart
   deleteEmptyCart: async () => {
