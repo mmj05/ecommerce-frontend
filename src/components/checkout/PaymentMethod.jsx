@@ -1,31 +1,31 @@
-// src/components/checkout/PaymentMethod.jsx
+// src/components/checkout/PaymentMethod.jsx - Simplified for COD only
 import { useState } from 'react';
-import { FiCreditCard, FiDollarSign, FiAlertCircle } from 'react-icons/fi';
-import StripeCheckout from './StripeCheckout';
+import { FiDollarSign, FiAlertCircle } from 'react-icons/fi';
+import { useSelector } from 'react-redux';
 
-const PaymentMethod = ({ selectedMethod, onSelectMethod, onNextStep, orderTotal }) => {
+const PaymentMethod = ({ selectedMethod, onSelectMethod, onNextStep }) => {
   const [error, setError] = useState(null);
+  
+  // Get cart total from Redux store
+  const { totalPrice } = useSelector((state) => state.cart);
+  
+  // Calculate order total with shipping and tax
+  const subtotal = totalPrice || 0;
+  const shipping = subtotal > 0 ? 5.99 : 0;
+  const tax = subtotal * 0.07; // 7% tax
+  const orderTotal = subtotal + shipping + tax;
 
-  // Available payment methods - Updated for 4+ character paymentMethod values
-  const paymentMethods = [
-    {
-      id: 'cod',
-      method: 'cash', // Changed from 'cod' to 'cash' to meet 4-char minimum
-      name: 'Cash on Delivery',
-      icon: <FiDollarSign />,
-      description: 'Pay with cash when your order is delivered'
-    },
-    {
-      id: 'credit_card',
-      method: 'card', // Changed from 'credit_card' to 'card' for simplicity
-      name: 'Credit/Debit Card',
-      icon: <FiCreditCard />,
-      description: 'Pay securely with your credit or debit card'
-    }
-  ];
+  // Cash on Delivery as the only payment method
+  const paymentMethod = {
+    id: 'cod',
+    method: 'cash', // 4-char minimum for backend validation
+    name: 'Cash on Delivery',
+    icon: <FiDollarSign />,
+    description: 'Pay with cash when your order is delivered'
+  };
 
-  const handleMethodSelect = (method) => {
-    onSelectMethod(method);
+  const handleMethodSelect = () => {
+    onSelectMethod(paymentMethod);
     setError(null);
   };
 
@@ -33,17 +33,8 @@ const PaymentMethod = ({ selectedMethod, onSelectMethod, onNextStep, orderTotal 
     if (selectedMethod) {
       onNextStep();
     } else {
-      setError('Please select a payment method');
+      setError('Please confirm your payment method');
     }
-  };
-
-  // Success and cancel handlers for the Stripe checkout
-  const handlePaymentSuccess = () => {
-    onNextStep();
-  };
-
-  const handlePaymentCancel = () => {
-    setError('Payment was cancelled or failed. Please try again.');
   };
 
   return (
@@ -61,61 +52,43 @@ const PaymentMethod = ({ selectedMethod, onSelectMethod, onNextStep, orderTotal 
       )}
       
       {/* Payment method selection */}
-      <div className="space-y-4 mb-8">
-        {paymentMethods.map((method) => (
-          <div 
-            key={method.id} 
-            className={`border rounded-lg p-4 cursor-pointer transition-all ${
-              selectedMethod && selectedMethod.id === method.id
-                ? 'border-primary bg-blue-50'
-                : 'border-gray-200 hover:border-primary'
-            }`}
-            onClick={() => handleMethodSelect(method)}
-          >
-            <div className="flex items-center">
-              <div className={`p-2 rounded-full mr-4 ${
-                selectedMethod && selectedMethod.id === method.id
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-500'
-              }`}>
-                {method.icon}
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900">{method.name}</h3>
-                <p className="text-sm text-gray-600">{method.description}</p>
-              </div>
-              {selectedMethod && selectedMethod.id === method.id && (
-                <div className="bg-primary text-white rounded-full p-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              )}
+      <div className="mb-8">
+        <div 
+          className={`border rounded-lg p-4 cursor-pointer transition-all ${
+            selectedMethod ? 'border-primary bg-blue-50' : 'border-gray-200 hover:border-primary'
+          }`}
+          onClick={handleMethodSelect}
+        >
+          <div className="flex items-center">
+            <div className={`p-2 rounded-full mr-4 ${
+              selectedMethod ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500'
+            }`}>
+              <FiDollarSign />
             </div>
+            <div className="flex-1">
+              <h3 className="font-medium text-gray-900">Cash on Delivery</h3>
+              <p className="text-sm text-gray-600">Pay with cash when your order is delivered</p>
+            </div>
+            {selectedMethod && (
+              <div className="bg-primary text-white rounded-full p-1">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+            )}
           </div>
-        ))}
+        </div>
       </div>
       
-      {/* Display appropriate payment button based on selection */}
-      {selectedMethod && (
-        <div className="mt-6">
-          {selectedMethod.id === 'credit_card' ? (
-            <StripeCheckout
-              amount={orderTotal}
-              orderTotal={orderTotal}
-              onSuccess={handlePaymentSuccess}
-              onCancel={handlePaymentCancel}
-            />
-          ) : (
-            <button
-              onClick={handleContinue}
-              className="w-full btn-primary py-3"
-            >
-              Continue to Review
-            </button>
-          )}
-        </div>
-      )}
+      {/* Continue button */}
+      <div className="mt-6">
+        <button
+          onClick={handleContinue}
+          className="w-full btn-primary py-3"
+        >
+          Continue to Review
+        </button>
+      </div>
     </div>
   );
 };
