@@ -1,93 +1,93 @@
+// src/components/checkout/OrderConfirmation.jsx
 import { FiShoppingBag } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
 
-const OrderSummary = ({ cartItems, subtotal, shipping, tax, total }) => {
+const OrderConfirmation = ({ order, selectedAddress, paymentMethod }) => {
+  // Check if order exists and has order items
+  if (!order || !order.orderItemDTOs) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Confirmation</h2>
+        <p className="text-gray-600 mb-6">Your order has been received. Thank you for shopping with us!</p>
+        <Link to="/products" className="btn-primary inline-flex items-center px-6 py-3">
+          <FiShoppingBag className="mr-2" /> Continue Shopping
+        </Link>
+      </div>
+    );
+  }
+
   // Format currency
   const formatCurrency = (amount) => {
-    return `$${amount.toFixed(2)}`;
+    return `$${Number(amount).toFixed(2)}`;
   };
-
+  
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6 sticky top-20">
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">Order Summary</h2>
+    <div className="bg-white rounded-lg shadow-sm p-6">
+      <h2 className="text-xl font-semibold text-gray-900 mb-6">Order Confirmation</h2>
       
-      {/* Items summary */}
+      <div className="bg-green-50 p-4 rounded-md flex items-start mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-500 mt-1 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        <div>
+          <h3 className="text-green-800 font-medium">Your order has been placed!</h3>
+          <p className="text-green-700 mt-1">
+            Thank you for your purchase. We'll send you shipping information once your order is on its way.
+          </p>
+          <p className="text-green-700 mt-1">
+            Order #: <span className="font-medium">{order.orderId}</span>
+          </p>
+        </div>
+      </div>
+      
+      {/* Order details */}
       <div className="mb-6">
-        <h3 className="text-sm font-medium text-gray-900 mb-3">
-          Items ({cartItems.length})
-        </h3>
-        
-        <div className="max-h-60 overflow-auto pr-2">
-          {cartItems.map((item) => (
-            <div 
-              key={item.productId} 
-              className="flex items-start py-3 border-b border-gray-200 last:border-0"
-            >
-              <div className="w-12 h-12 bg-gray-100 rounded flex-shrink-0 mr-3 overflow-hidden">
-                <img 
-                  src={item.image || "https://via.placeholder.com/48"} 
-                  alt={item.productName}
-                  className="w-full h-full object-cover"
-                />
+        <h3 className="font-medium text-gray-900 mb-3">Order Items</h3>
+        <div className="bg-gray-50 p-4 rounded space-y-3">
+          {order.orderItemDTOs.map((item, index) => (
+            <div key={index} className="flex justify-between py-2 border-b border-gray-200 last:border-0">
+              <div>
+                <span className="font-medium">
+                  {item.productDTO ? item.productDTO.productName : 'Product'}
+                </span>
+                <span className="text-gray-600 text-sm ml-2">
+                  × {item.quantity}
+                </span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {item.productName}
-                </p>
-                <p className="text-xs text-gray-500">
-                  Qty: {item.quantity}
-                </p>
-              </div>
-              <div className="text-sm font-medium text-gray-900 ml-2">
-                {formatCurrency((item.specialPrice || item.price) * item.quantity)}
-              </div>
+              <span>
+                {formatCurrency(item.orderedProductPrice * item.quantity)}
+              </span>
             </div>
           ))}
         </div>
       </div>
       
-      {/* Price breakdown */}
-      <div className="space-y-3 mb-6">
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Subtotal</span>
-          <span className="text-gray-900 font-medium">{formatCurrency(subtotal)}</span>
-        </div>
-        
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Shipping</span>
-          <span className="text-gray-900 font-medium">{formatCurrency(shipping)}</span>
-        </div>
-        
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Tax (7%)</span>
-          <span className="text-gray-900 font-medium">{formatCurrency(tax)}</span>
+      {/* Payment Method */}
+      <div className="mb-6">
+        <h3 className="font-medium text-gray-900 mb-3">Payment Method</h3>
+        <div className="bg-gray-50 p-4 rounded">
+          <p>
+            {order.paymentDTO ? order.paymentDTO.paymentMethod : 'Payment processed'}
+          </p>
         </div>
       </div>
       
       {/* Total */}
-      <div className="border-t border-gray-200 pt-4">
-        <div className="flex justify-between items-center">
-          <span className="text-base font-semibold text-gray-900">Total</span>
-          <span className="text-lg font-bold text-primary">{formatCurrency(total)}</span>
+      <div className="mb-6">
+        <h3 className="font-medium text-gray-900 mb-3">Order Total</h3>
+        <div className="bg-gray-50 p-4 rounded">
+          <div className="flex justify-between font-medium">
+            <span>Total</span>
+            <span className="text-primary">{formatCurrency(order.totalAmount)}</span>
+          </div>
         </div>
       </div>
       
-      {/* Shipping & secure transaction notice */}
-      <div className="mt-6 text-xs text-gray-500 space-y-2">
-        <p className="flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-          </svg>
-          Free shipping on orders over $50
-        </p>
-        <p className="flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-          </svg>
-          Secure checkout
-        </p>
-      </div>
+      <Link to="/products" className="btn-primary w-full py-3 flex items-center justify-center">
+        <FiShoppingBag className="mr-2" /> Continue Shopping
+      </Link>
     </div>
   );
 };
 
-export default OrderSummary;
+export default OrderConfirmation;
