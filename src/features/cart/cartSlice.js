@@ -61,24 +61,43 @@ export const addToCart = createAsyncThunk(
       
       const { auth } = getState();
       if (auth.isAuthenticated) {
-        // Add to server cart if authenticated
-        const response = await cartService.addToCart(productId, quantity);
-        console.log('Server response after adding to cart:', response);
+        // For authenticated users
         
-        // Always reload cart from server after adding items to ensure state consistency
-        if (response) {
+        // Step 1: Check if item is already in cart
+        const { cartItems } = getState().cart;
+        const existingItem = cartItems.find(item => String(item.productId) === String(productId));
+        
+        if (existingItem) {
+          // If item exists in cart, use updateCartItem instead of addToCart
+          console.log('Product already in cart, updating quantity instead');
+          
+          // We need a different approach than just "increase" - we need to add the specific quantity
+          // Since the backend doesn't support adding specific quantity in update, we'll make multiple calls
+          for (let i = 0; i < quantity; i++) {
+            await cartService.updateCartItem(productId, 'increase');
+          }
+          
+          // Then fetch the updated cart to return
+          const updatedCart = await cartService.getCart();
+          console.log('Updated cart after increasing quantity:', updatedCart);
+          return updatedCart;
+        } else {
+          // Normal flow for adding new item
+          const response = await cartService.addToCart(productId, quantity);
+          console.log('Server response after adding to cart:', response);
+          
+          // Get updated cart
           try {
             const updatedCart = await cartService.getCart();
             console.log('Updated cart after adding item:', updatedCart);
-            return updatedCart; // Return the full updated cart
+            return updatedCart;
           } catch (err) {
             console.warn('Error fetching updated cart, using response data:', err);
             return response;
           }
         }
-        return response;
       } else {
-        // For guest users, add to local cart
+        // For guest users, add to local cart (existing code)
         const { products } = getState();
         const product = products.products.find(p => p.productId === productId) || 
                         products.product; // For single product page
