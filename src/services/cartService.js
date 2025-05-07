@@ -41,7 +41,7 @@ const cartService = {
   // Update cart item quantity
   updateCartItem: async (productId, operation) => {
     try {
-      const response = await api.put(`/cart/products/${productId}/quantity/${operation}`);
+      const response = await api.put(`/carts/products/${productId}/quantity/${operation}`);
       return response.data;
     } catch (error) {
       console.error('Error updating cart item:', error);

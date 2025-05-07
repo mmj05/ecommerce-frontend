@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getCurrentUser } from './features/auth/authSlice';
-import { getCart } from './features/cart/cartSlice';
+import { getCart, mergeCart } from './features/cart/cartSlice';
 
 // Pages
 import Home from './pages/Home';
@@ -27,7 +27,9 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 function App() {
   const dispatch = useDispatch();
   const { isAuthenticated, authChecked } = useSelector(state => state.auth);
+  const { cartItems } = useSelector(state => state.cart);
   const [initialAuthCheckDone, setInitialAuthCheckDone] = useState(false);
+  const [cartMerged, setCartMerged] = useState(false);
 
   // Check if user is already logged in on app load
   useEffect(() => {
@@ -39,12 +41,35 @@ function App() {
     checkAuth();
   }, [dispatch]);
 
-  // When authentication status changes, fetch the cart
+  // When authentication status changes and initial auth check is done
   useEffect(() => {
-    if (initialAuthCheckDone) {
-      dispatch(getCart());
-    }
-  }, [dispatch, isAuthenticated, initialAuthCheckDone]);
+    const handleCartActions = async () => {
+      if (initialAuthCheckDone) {
+        if (isAuthenticated) {
+          // If logged in and has guest cart items not yet merged
+          const hasGuestCartItems = localStorage.getItem('guestCart') && 
+            JSON.parse(localStorage.getItem('guestCart')).cartItems.length > 0;
+            
+          if (hasGuestCartItems && !cartMerged) {
+            // Merge guest cart with user cart
+            console.log('Merging guest cart with user cart');
+            await dispatch(mergeCart());
+            setCartMerged(true);
+          } else {
+            // Just get the user's cart
+            dispatch(getCart());
+          }
+        } else {
+          // Not authenticated, just get the cart (which will be from localStorage)
+          dispatch(getCart());
+          // Reset cart merged flag when logged out
+          setCartMerged(false);
+        }
+      }
+    };
+    
+    handleCartActions();
+  }, [dispatch, isAuthenticated, initialAuthCheckDone, cartMerged]);
 
   // Show loading screen until initial auth check completes
   if (!initialAuthCheckDone && !authChecked) {

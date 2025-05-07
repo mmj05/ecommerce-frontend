@@ -9,7 +9,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { isAuthenticated, user } = useSelector((state) => state.auth);
+  const { isAuthenticated, user, authChecked } = useSelector((state) => state.auth);
   const { cartItems, cartUpdated } = useSelector((state) => state.cart);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -17,8 +17,11 @@ const Header = () => {
 
   // Fetch cart data when component mounts or cart is updated
   useEffect(() => {
-    dispatch(getCart());
-  }, [dispatch, isAuthenticated, cartUpdated]); // Re-fetch when authentication status or cart updates
+    // Fetch cart only after initial authentication check is done
+    if (authChecked) {
+      dispatch(getCart());
+    }
+  }, [dispatch, isAuthenticated, cartUpdated, authChecked]); // Re-fetch when authentication status or cart updates
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -52,6 +55,8 @@ const Header = () => {
 
   const handleLogout = async () => {
     await dispatch(logout());
+    // After logout completes, make sure cart is refreshed
+    dispatch(getCart());
     navigate('/');
   };
 

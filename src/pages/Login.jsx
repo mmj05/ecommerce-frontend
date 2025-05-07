@@ -80,15 +80,9 @@ const Login = () => {
       try {
         // Login the user
         await dispatch(login(formData)).unwrap();
-        
-        // If there are items in the guest cart, merge them
-        if (cartItems.length > 0) {
-          await dispatch(mergeCart());
-        }
-        
-        // Navigation is handled by the useEffect that watches isAuthenticated
+        // The login thunk already handles cart merging, so we don't need to do it here
+        // DO NOT call mergeCart() here - it's already being called in the login thunk
       } catch (err) {
-        // Error is handled by the reducer and displayed in the UI
         console.error('Login failed:', err);
       } finally {
         setIsSubmitting(false);

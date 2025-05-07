@@ -1,5 +1,7 @@
+// src/features/auth/authSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authService from '../../services/authService';
+import { clearCart, mergeCart } from '../cart/cartSlice';
 
 // Check if user info is stored in localStorage
 const storedUser = localStorage.getItem('user') 
@@ -11,14 +13,15 @@ const initialState = {
   user: storedUser,
   isAuthenticated: !!storedUser,
   isLoading: false,
-  authChecked: false, // Add a new flag to track if we've checked auth state
+  authChecked: false,
   error: null,
 };
 
-// Login user action in auth/authSlice.js
+// Login user
+// Update the login action in src/features/auth/authSlice.js
 export const login = createAsyncThunk(
   'auth/login',
-  async (userData, { rejectWithValue }) => {
+  async (userData, { rejectWithValue, dispatch }) => {
     try {
       const response = await authService.login(userData);
       
@@ -40,6 +43,9 @@ export const login = createAsyncThunk(
       // Store user in localStorage with token
       localStorage.setItem('user', JSON.stringify(processedResponse));
       
+      // After successful login, merge guest cart with user cart
+      dispatch(mergeCart());
+      
       return processedResponse;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Login failed. Please check your credentials.');
@@ -47,7 +53,27 @@ export const login = createAsyncThunk(
   }
 );
 
-// Register user
+// Logout user - Enhanced to ensure cart clearing works
+export const logout = createAsyncThunk(
+  'auth/logout',
+  async (_, { rejectWithValue, dispatch }) => {
+    try {
+      await authService.logout();
+      // Remove user from localStorage
+      localStorage.removeItem('user');
+      // Clear the cart when logging out
+      dispatch(clearCart());
+      return null;
+    } catch (error) {
+      // Even if logout API fails, we still want to remove the user from localStorage
+      localStorage.removeItem('user');
+      dispatch(clearCart());
+      return rejectWithValue(error.response?.data?.message || 'Logout failed');
+    }
+  }
+);
+
+// Other async thunks remain the same
 export const register = createAsyncThunk(
   'auth/register',
   async (userData, { rejectWithValue }) => {
@@ -60,22 +86,18 @@ export const register = createAsyncThunk(
   }
 );
 
-// Get current user
 export const getCurrentUser = createAsyncThunk(
   'auth/getCurrentUser',
   async (_, { rejectWithValue }) => {
     try {
-      // If no token/user in localStorage, don't even make the request
       if (!localStorage.getItem('user')) {
         return null;
       }
       
       const response = await authService.getCurrentUser();
-      // Update user in localStorage
       localStorage.setItem('user', JSON.stringify(response));
       return response;
     } catch (error) {
-      // If getting current user fails, remove from localStorage
       localStorage.removeItem('user');
       console.log('Failed to get current user:', error);
       return null;
@@ -83,24 +105,6 @@ export const getCurrentUser = createAsyncThunk(
   }
 );
 
-// Logout user
-export const logout = createAsyncThunk(
-  'auth/logout',
-  async (_, { rejectWithValue }) => {
-    try {
-      await authService.logout();
-      // Remove user from localStorage
-      localStorage.removeItem('user');
-      return null;
-    } catch (error) {
-      // Even if logout API fails, we still want to remove the user from localStorage
-      localStorage.removeItem('user');
-      return rejectWithValue(error.response?.data?.message || 'Logout failed');
-    }
-  }
-);
-
-// Request password reset
 export const requestPasswordReset = createAsyncThunk(
   'auth/requestPasswordReset',
   async (email, { rejectWithValue }) => {
@@ -113,7 +117,6 @@ export const requestPasswordReset = createAsyncThunk(
   }
 );
 
-// Reset password
 export const resetPassword = createAsyncThunk(
   'auth/resetPassword',
   async ({ token, newPassword }, { rejectWithValue }) => {
@@ -134,6 +137,14 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    // Add a manual logout action for use in emergency cases
+    manualLogout: (state) => {
+      state.isLoading = false;
+      state.isAuthenticated = false;
+      state.user = null;
+      state.authChecked = true;
+      // Note: We rely on the clearCart action being dispatched separately
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -162,7 +173,6 @@ const authSlice = createSlice({
       .addCase(register.fulfilled, (state) => {
         state.isLoading = false;
         state.authChecked = true;
-        // We don't set authenticated here, user should log in after registration
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
@@ -177,7 +187,6 @@ const authSlice = createSlice({
       })
       .addCase(getCurrentUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        // Only set as authenticated if we actually got user data
         state.isAuthenticated = !!action.payload;
         state.user = action.payload;
         state.authChecked = true;
@@ -189,7 +198,7 @@ const authSlice = createSlice({
         state.authChecked = true;
       })
       
-      // Logout
+      // Logout - Make sure we handle this correctly
       .addCase(logout.pending, (state) => {
         state.isLoading = true;
       })
@@ -198,16 +207,16 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.authChecked = true;
+        // Note: The cart should already be cleared via the dispatch(clearCart()) in the thunk
       })
       .addCase(logout.rejected, (state) => {
-        // Even if the API call fails, we still want to log the user out locally
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
         state.authChecked = true;
       })
       
-      // Request password reset
+      // Password reset flows remain the same
       .addCase(requestPasswordReset.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -219,8 +228,6 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
-      
-      // Reset password
       .addCase(resetPassword.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -235,5 +242,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError } = authSlice.actions;
+export const { clearError, manualLogout } = authSlice.actions;
 export default authSlice.reducer;
