@@ -1,27 +1,41 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../features/auth/authSlice';
 import { getCart } from '../../features/cart/cartSlice';
 import { FiShoppingCart, FiUser, FiMenu, FiX, FiSearch } from 'react-icons/fi';
+import { debounce } from 'lodash';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { isAuthenticated, user, authChecked } = useSelector((state) => state.auth);
-  const { cartItems, cartUpdated } = useSelector((state) => state.cart);
+  const { cartItems, cartUpdated, isLoading: cartLoading } = useSelector((state) => state.cart);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const profileMenuRef = useRef(null);
+  const lastFetchTimeRef = useRef(0);
+
+  // Create a debounced cart fetch function
+  const fetchCart = useCallback(
+    debounce(() => {
+      // Only fetch if we haven't fetched recently (300ms)
+      const now = Date.now();
+      if (now - lastFetchTimeRef.current > 300 && authChecked && !cartLoading) {
+        lastFetchTimeRef.current = now;
+        dispatch(getCart());
+      }
+    }, 300),
+    [dispatch, authChecked, cartLoading]
+  );
 
   // Fetch cart data when component mounts or cart is updated
   useEffect(() => {
-    // Fetch cart only after initial authentication check is done
     if (authChecked) {
-      dispatch(getCart());
+      fetchCart();
     }
-  }, [dispatch, isAuthenticated, cartUpdated, authChecked]); // Re-fetch when authentication status or cart updates
+  }, [fetchCart, isAuthenticated, cartUpdated, authChecked]);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -54,10 +68,13 @@ const Header = () => {
   };
 
   const handleLogout = async () => {
-    await dispatch(logout());
-    // After logout completes, make sure cart is refreshed
-    dispatch(getCart());
-    navigate('/');
+    try {
+      await dispatch(logout()).unwrap();
+      // After logout completes, redirect to home
+      navigate('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   // Calculate total cart items quantity
