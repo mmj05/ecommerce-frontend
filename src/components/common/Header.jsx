@@ -1,10 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../features/auth/authSlice';
 import { getCart } from '../../features/cart/cartSlice';
 import { FiShoppingCart, FiUser, FiMenu, FiX, FiSearch } from 'react-icons/fi';
-import { debounce } from 'lodash';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -15,27 +14,32 @@ const Header = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const profileMenuRef = useRef(null);
-  const lastFetchTimeRef = useRef(0);
-
-  // Create a debounced cart fetch function
-  const fetchCart = useCallback(
-    debounce(() => {
-      // Only fetch if we haven't fetched recently (300ms)
-      const now = Date.now();
-      if (now - lastFetchTimeRef.current > 300 && authChecked && !cartLoading) {
-        lastFetchTimeRef.current = now;
-        dispatch(getCart());
-      }
-    }, 300),
-    [dispatch, authChecked, cartLoading]
-  );
+  const cartFetchTimeoutRef = useRef(null);
 
   // Fetch cart data when component mounts or cart is updated
   useEffect(() => {
-    if (authChecked) {
-      fetchCart();
+    // Cancel any pending timeouts
+    if (cartFetchTimeoutRef.current) {
+      clearTimeout(cartFetchTimeoutRef.current);
+      cartFetchTimeoutRef.current = null;
     }
-  }, [fetchCart, isAuthenticated, cartUpdated, authChecked]);
+    
+    // Only fetch if authenticated status is confirmed and we're not already loading
+    if (authChecked && !cartLoading) {
+      // Set a timeout to prevent rapid sequential fetches
+      cartFetchTimeoutRef.current = setTimeout(() => {
+        dispatch(getCart());
+        cartFetchTimeoutRef.current = null;
+      }, 300);
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      if (cartFetchTimeoutRef.current) {
+        clearTimeout(cartFetchTimeoutRef.current);
+      }
+    };
+  }, [dispatch, cartUpdated, authChecked, isAuthenticated]);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
