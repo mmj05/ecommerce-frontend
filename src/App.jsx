@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getCurrentUser } from './features/auth/authSlice';
 import { getCart, mergeCart } from './features/cart/cartSlice';
+import { debounce } from 'lodash';
 
 // Pages
 import Home from './pages/Home';
@@ -28,8 +29,17 @@ function App() {
   const dispatch = useDispatch();
   const { isAuthenticated, authChecked } = useSelector(state => state.auth);
   const { cartItems } = useSelector(state => state.cart);
+  
+  // State to track component initialization steps
   const [initialAuthCheckDone, setInitialAuthCheckDone] = useState(false);
   const [cartMerged, setCartMerged] = useState(false);
+  const [cartLoaded, setCartLoaded] = useState(false);
+  const [cartLoadedAfterLogin, setCartLoadedAfterLogin] = useState(false);
+
+  // Create a debounced version of getCart
+  const debouncedGetCart = debounce(() => {
+    dispatch(getCart());
+  }, 300);
 
   // Check if user is already logged in on app load
   useEffect(() => {
@@ -46,30 +56,50 @@ function App() {
     const handleCartActions = async () => {
       if (initialAuthCheckDone) {
         if (isAuthenticated) {
-          // If logged in and has guest cart items not yet merged
-          const hasGuestCartItems = localStorage.getItem('guestCart') && 
-            JSON.parse(localStorage.getItem('guestCart')).cartItems.length > 0;
-            
+          // Check if there are guest cart items to merge
+          const guestCartData = localStorage.getItem('guestCart');
+          const hasGuestCartItems = guestCartData && 
+            JSON.parse(guestCartData).cartItems.length > 0;
+          
           if (hasGuestCartItems && !cartMerged) {
             // Merge guest cart with user cart
             console.log('Merging guest cart with user cart');
-            await dispatch(mergeCart());
+            try {
+              await dispatch(mergeCart()).unwrap();
+              console.log('Cart merge completed successfully');
+            } catch (error) {
+              console.error('Error merging cart:', error);
+            }
             setCartMerged(true);
-          } else {
-            // Just get the user's cart
+          } else if (!cartLoadedAfterLogin) {
+            // Just load the cart once after login
+            console.log('Loading cart after login');
             dispatch(getCart());
+            setCartLoadedAfterLogin(true);
           }
         } else {
-          // Not authenticated, just get the cart (which will be from localStorage)
-          dispatch(getCart());
-          // Reset cart merged flag when logged out
-          setCartMerged(false);
+          // For non-authenticated users, just make sure cart is loaded once
+          if (!cartLoaded) {
+            console.log('Loading guest cart');
+            dispatch(getCart());
+            setCartLoaded(true);
+            // Reset login-related flags when logged out
+            setCartMerged(false);
+            setCartLoadedAfterLogin(false);
+          }
         }
       }
     };
     
     handleCartActions();
-  }, [dispatch, isAuthenticated, initialAuthCheckDone, cartMerged]);
+  }, [
+    dispatch, 
+    isAuthenticated, 
+    initialAuthCheckDone, 
+    cartMerged, 
+    cartLoaded, 
+    cartLoadedAfterLogin
+  ]);
 
   // Show loading screen until initial auth check completes
   if (!initialAuthCheckDone && !authChecked) {
