@@ -55,49 +55,17 @@ export const getCart = createAsyncThunk(
 // Add product to cart
 export const addToCart = createAsyncThunk(
   'cart/addToCart',
-  async ({ productId, quantity }, { rejectWithValue, getState, dispatch }) => {
+  async ({ productId, quantity }, { rejectWithValue, getState }) => {
     try {
       console.log(`Adding product ID ${productId} with quantity ${quantity} to cart`);
       
       const { auth } = getState();
       if (auth.isAuthenticated) {
-        // For authenticated users
-        
-        // Step 1: Check if item is already in cart
-        const { cartItems } = getState().cart;
-        const existingItem = cartItems.find(item => String(item.productId) === String(productId));
-        
-        if (existingItem) {
-          // If item exists in cart, use updateCartItem instead of addToCart
-          console.log('Product already in cart, updating quantity instead');
-          
-          // We need a different approach than just "increase" - we need to add the specific quantity
-          // Since the backend doesn't support adding specific quantity in update, we'll make multiple calls
-          for (let i = 0; i < quantity; i++) {
-            await cartService.updateCartItem(productId, 'increase');
-          }
-          
-          // Then fetch the updated cart to return
-          const updatedCart = await cartService.getCart();
-          console.log('Updated cart after increasing quantity:', updatedCart);
-          return updatedCart;
-        } else {
-          // Normal flow for adding new item
-          const response = await cartService.addToCart(productId, quantity);
-          console.log('Server response after adding to cart:', response);
-          
-          // Get updated cart
-          try {
-            const updatedCart = await cartService.getCart();
-            console.log('Updated cart after adding item:', updatedCart);
-            return updatedCart;
-          } catch (err) {
-            console.warn('Error fetching updated cart, using response data:', err);
-            return response;
-          }
-        }
+        // For authenticated users, add directly (backend now handles duplicates)
+        const response = await cartService.addToCart(productId, quantity);
+        return response;
       } else {
-        // For guest users, add to local cart (existing code)
+        // For guest users, handle locally as before
         const { products } = getState();
         const product = products.products.find(p => p.productId === productId) || 
                         products.product; // For single product page
@@ -170,23 +138,38 @@ export const updateCartItem = createAsyncThunk(
 export const mergeCart = createAsyncThunk(
   'cart/mergeCart',
   async (_, { getState, dispatch }) => {
-    const { cart } = getState();
-    
-    // If there are items in the guest cart, add them to the user's cart
-    if (cart.cartItems.length > 0) {
-      for (const item of cart.cartItems) {
-        await dispatch(addToCart({ 
-          productId: item.productId, 
-          quantity: item.quantity 
-        }));
+    try {
+      const { cart } = getState();
+      
+      // If no items in guest cart, just get the user's cart
+      if (!cart.cartItems.length) {
+        return await dispatch(getCart()).unwrap();
       }
       
-      // Clear the guest cart from localStorage
+      console.log('Merging cart with items:', cart.cartItems.length);
+      
+      // Process each guest cart item - with our backend fixes,
+      // we can now directly add items without worrying about duplicates
+      for (const item of cart.cartItems) {
+        try {
+          console.log(`Merging item: ${item.productId}, quantity: ${item.quantity}`);
+          await cartService.addToCart(item.productId, item.quantity);
+        } catch (error) {
+          console.warn(`Error adding item ${item.productId} to cart:`, error);
+          // Continue with next item even if one fails
+        }
+      }
+      
+      // Clear the guest cart after successful merge
       localStorage.removeItem('guestCart');
+      
+      // Get the final cart state
+      return await dispatch(getCart()).unwrap();
+    } catch (error) {
+      console.error("Error merging cart:", error);
+      // If merging fails, still try to get current cart
+      return await dispatch(getCart()).unwrap();
     }
-    
-    // Fetch the updated cart
-    return dispatch(getCart()).unwrap();
   }
 );
 
