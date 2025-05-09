@@ -23,20 +23,18 @@ const cartService = {
 
   // Add product to cart
   addToCart: async (productId, quantity) => {
-    try {
-      console.log(`Adding product ID ${productId} with quantity ${quantity} to cart via API`);
-      // Ensure productId is properly formatted
-      const formattedProductId = String(productId).trim();
-      const formattedQuantity = Number(quantity);
-      
-      const response = await api.post(`/carts/products/${formattedProductId}/quantity/${formattedQuantity}`);
-      console.log('Response from adding to cart:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      throw error;
-    }
-  },
+  try {
+    console.log(`Adding product ID ${productId} with quantity ${quantity} to cart via API`);
+    
+    // With the backend fix, this will now handle both new and existing items
+    const response = await api.post(`/carts/products/${productId}/quantity/${quantity}`);
+    console.log('Response from adding to cart:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error adding to cart:', error);
+    throw error;
+  }
+},
 
   // Update cart item quantity
   updateCartItem: async (productId, operation) => {
