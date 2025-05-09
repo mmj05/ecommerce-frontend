@@ -1,3 +1,4 @@
+// src/features/cart/cartSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import cartService from '../../services/cartService';
 
@@ -11,24 +12,34 @@ const initialState = {
   totalPrice: storedCart.totalPrice || 0,
   isLoading: false,
   error: null,
-  cartUpdated: 0, // Add a counter for tracking cart updates
+  cartUpdated: 0, // Counter for tracking cart updates
+  lastFetchTime: 0, // Track last fetch time to prevent duplicate fetches
 };
 
-// Get cart for authenticated user
+// Get cart for authenticated user or guest
 export const getCart = createAsyncThunk(
   'cart/getCart',
   async (_, { rejectWithValue, getState }) => {
     try {
+      const { auth, cart } = getState();
+      
+      // Skip fetching if last fetch was very recent (300ms)
+      const now = Date.now();
+      if (now - cart.lastFetchTime < 300) {
+        return {
+          products: cart.cartItems,
+          totalPrice: cart.totalPrice
+        };
+      }
+      
       // Only fetch from API if user is authenticated
-      const { auth } = getState();
       if (auth.isAuthenticated) {
         try {
           const response = await cartService.getCart();
           console.log('GetCart response:', response);
           return response;
         } catch (error) {
-          // If the API call fails for an authenticated user (e.g., no cart exists),
-          // return an empty cart structure instead of rejecting
+          // If the API call fails for an authenticated user, return empty cart
           if (error.response && (error.response.status === 404 || error.response.status === 400)) {
             console.log('No cart found for authenticated user, returning empty cart');
             return { 
@@ -41,8 +52,8 @@ export const getCart = createAsyncThunk(
       } else {
         // Return the local cart for guest users
         return { 
-          products: getState().cart.cartItems,
-          totalPrice: getState().cart.totalPrice 
+          products: cart.cartItems,
+          totalPrice: cart.totalPrice 
         };
       }
     } catch (error) {
@@ -61,7 +72,7 @@ export const addToCart = createAsyncThunk(
       
       const { auth } = getState();
       if (auth.isAuthenticated) {
-        // For authenticated users, add directly (backend now handles duplicates)
+        // For authenticated users, add directly (backend handles duplicates)
         const response = await cartService.addToCart(productId, quantity);
         return response;
       } else {
@@ -146,14 +157,45 @@ export const mergeCart = createAsyncThunk(
         return await dispatch(getCart()).unwrap();
       }
       
-      console.log('Merging cart with items:', cart.cartItems.length);
+      console.log('Merging guest cart with user cart');
       
-      // Process each guest cart item - with our backend fixes,
-      // we can now directly add items without worrying about duplicates
+      // First get the current user's cart to compare with guest cart
+      let userCart;
+      try {
+        userCart = await cartService.getCart();
+      } catch (error) {
+        console.warn('Error fetching user cart for merge:', error);
+        userCart = { products: [] };
+      }
+      
+      // Create a map of product IDs to products in the user's cart
+      const userProducts = new Map();
+      if (userCart.products && Array.isArray(userCart.products)) {
+        userCart.products.forEach(product => {
+          userProducts.set(product.productId.toString(), product);
+        });
+      }
+      
+      // Process each guest cart item
       for (const item of cart.cartItems) {
         try {
-          console.log(`Merging item: ${item.productId}, quantity: ${item.quantity}`);
-          await cartService.addToCart(item.productId, item.quantity);
+          const productId = item.productId.toString();
+          const userItem = userProducts.get(productId);
+          
+          // If product exists in both carts, only update if guest quantity is higher
+          if (userItem && userItem.quantity >= item.quantity) {
+            console.log(`Product ${productId} already in user cart with sufficient quantity (${userItem.quantity})`);
+            continue;
+          } else if (userItem) {
+            // User has this product but with less quantity - update with the difference
+            const quantityDiff = item.quantity - userItem.quantity;
+            console.log(`Product ${productId} in user cart but with less quantity. Adding ${quantityDiff} more.`);
+            await cartService.addToCart(item.productId, quantityDiff);
+          } else {
+            // Product not in user cart - add it
+            console.log(`Adding new product ${productId} with quantity ${item.quantity} to user cart`);
+            await cartService.addToCart(item.productId, item.quantity);
+          }
         } catch (error) {
           console.warn(`Error adding item ${item.productId} to cart:`, error);
           // Continue with next item even if one fails
@@ -213,45 +255,26 @@ export const removeFromCart = createAsyncThunk(
   }
 );
 
-export const deleteEmptyCart = createAsyncThunk(
-  'cart/deleteEmptyCart',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await cartService.deleteEmptyCart();
-      console.log('Delete empty cart response:', response);
-      return response;
-    } catch (error) {
-      console.error('Error deleting empty cart:', error);
-      return rejectWithValue(error.response?.data?.message || 'Failed to delete empty cart');
+export const clearCart = createAsyncThunk(
+  'cart/clearCart',
+  async (_, { getState }) => {
+    const { auth } = getState();
+    
+    if (auth.isAuthenticated) {
+      // For authenticated users, attempt to delete the cart from the server
+      try {
+        await cartService.deleteEmptyCart();
+      } catch (error) {
+        console.warn('Error clearing cart from server:', error);
+      }
     }
+    
+    // Clear local storage
+    localStorage.removeItem('guestCart');
+    
+    return true;
   }
 );
-
-export const checkAndDeleteEmptyCart = () => async (dispatch, getState) => {
-  const { cart, auth } = getState();
-  
-  // Only proceed if authenticated and cart is empty
-  if (auth.isAuthenticated && cart.cartItems.length === 0 && !cart.isLoading) {
-    console.log('Cart is empty, attempting to delete from database');
-    try {
-      // Set a flag in localStorage to prevent duplicate delete attempts
-      const lastAttempt = localStorage.getItem('lastEmptyCartDeleteAttempt');
-      const now = Date.now();
-      
-      // Only try to delete if we haven't tried in the last 10 seconds
-      if (!lastAttempt || (now - parseInt(lastAttempt)) > 10000) {
-        localStorage.setItem('lastEmptyCartDeleteAttempt', now.toString());
-        
-        await dispatch(deleteEmptyCart()).unwrap();
-        console.log('Empty cart deleted successfully');
-      } else {
-        console.log('Skipping delete attempt, last attempt was too recent');
-      }
-    } catch (err) {
-      console.warn('Failed to delete empty cart:', err);
-    }
-  }
-};
 
 // Cart slice
 const cartSlice = createSlice({
@@ -260,14 +283,6 @@ const cartSlice = createSlice({
   reducers: {
     clearCartError: (state) => {
       state.error = null;
-    },
-    clearCart: (state) => {
-      state.cartItems = [];
-      state.totalPrice = 0;
-      // Increment the cartUpdated counter to trigger Header refresh
-      state.cartUpdated += 1;
-      // Clear guest cart from localStorage
-      localStorage.removeItem('guestCart');
     },
   },
   extraReducers: (builder) => {
@@ -281,6 +296,7 @@ const cartSlice = createSlice({
         state.isLoading = false;
         state.cartItems = action.payload.products || [];
         state.totalPrice = action.payload.totalPrice || 0;
+        state.lastFetchTime = Date.now(); // Track when we last fetched
       })
       .addCase(getCart.rejected, (state, action) => {
         state.isLoading = false;
@@ -330,6 +346,7 @@ const cartSlice = createSlice({
         
         // Increment the cartUpdated counter to trigger Header refresh
         state.cartUpdated += 1;
+        state.lastFetchTime = Date.now(); // Track when we last updated
       })
       .addCase(addToCart.rejected, (state, action) => {
         state.isLoading = false;
@@ -377,6 +394,7 @@ const cartSlice = createSlice({
         
         // Increment the cartUpdated counter to trigger Header refresh
         state.cartUpdated += 1;
+        state.lastFetchTime = Date.now(); // Track when we last updated
       })
       .addCase(updateCartItem.rejected, (state, action) => {
         state.isLoading = false;
@@ -421,6 +439,7 @@ const cartSlice = createSlice({
         
         // Increment the cartUpdated counter to trigger Header refresh
         state.cartUpdated += 1;
+        state.lastFetchTime = Date.now(); // Track when we last updated
       })
       .addCase(removeFromCart.rejected, (state, action) => {
         state.isLoading = false;
@@ -440,27 +459,33 @@ const cartSlice = createSlice({
         localStorage.removeItem('guestCart');
         // Increment the cartUpdated counter to trigger Header refresh
         state.cartUpdated += 1;
+        state.lastFetchTime = Date.now(); // Track when we last updated
       })
       .addCase(mergeCart.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })
-      .addCase(deleteEmptyCart.pending, (state) => {
+      
+      // Clear cart
+      .addCase(clearCart.pending, (state) => {
         state.isLoading = true;
-        state.error = null;
       })
-      .addCase(deleteEmptyCart.fulfilled, (state) => {
+      .addCase(clearCart.fulfilled, (state) => {
         state.isLoading = false;
-        // The cart is now deleted on the server, keep our local state in sync
-        console.log('Cart deletion successful, updating local state');
+        state.cartItems = [];
+        state.totalPrice = 0;
+        state.cartUpdated += 1;
+        state.lastFetchTime = Date.now(); // Track when we last updated
       })
-      .addCase(deleteEmptyCart.rejected, (state, action) => {
+      .addCase(clearCart.rejected, (state) => {
         state.isLoading = false;
-        state.error = action.payload;
-        console.warn('Failed to delete empty cart:', action.payload);
-      })
+        // Even if server-side clearing fails, still clear client-side
+        state.cartItems = [];
+        state.totalPrice = 0;
+        state.cartUpdated += 1;
+      });
   },
 });
 
-export const { clearCartError, clearCart } = cartSlice.actions;
+export const { clearCartError } = cartSlice.actions;
 export default cartSlice.reducer;
