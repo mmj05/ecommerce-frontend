@@ -1,9 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getCurrentUser } from './features/auth/authSlice';
 import { getCart, mergeCart } from './features/cart/cartSlice';
-import { debounce } from 'lodash';
 
 // Pages
 import Home from './pages/Home';
@@ -28,81 +27,100 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 function App() {
   const dispatch = useDispatch();
   const { isAuthenticated, authChecked } = useSelector(state => state.auth);
-  const { cartItems } = useSelector(state => state.cart);
   
-  // State to track component initialization steps
+  // State to track initialization steps to avoid redundant operations
   const [initialAuthCheckDone, setInitialAuthCheckDone] = useState(false);
-  const [cartMerged, setCartMerged] = useState(false);
-  const [cartLoaded, setCartLoaded] = useState(false);
-  const [cartLoadedAfterLogin, setCartLoadedAfterLogin] = useState(false);
-
-  // Create a debounced version of getCart
-  const debouncedGetCart = debounce(() => {
-    dispatch(getCart());
-  }, 300);
+  const [cartInitialized, setCartInitialized] = useState(false);
+  const [cartMergeAttempted, setCartMergeAttempted] = useState(false);
+  const initTimeoutRef = useRef(null);
 
   // Check if user is already logged in on app load
   useEffect(() => {
     const checkAuth = async () => {
-      await dispatch(getCurrentUser());
-      setInitialAuthCheckDone(true);
-    };
-    
-    checkAuth();
-  }, [dispatch]);
-
-  // When authentication status changes and initial auth check is done
-  useEffect(() => {
-    const handleCartActions = async () => {
-      if (initialAuthCheckDone) {
-        if (isAuthenticated) {
-          // Check if there are guest cart items to merge
-          const guestCartData = localStorage.getItem('guestCart');
-          const hasGuestCartItems = guestCartData && 
-            JSON.parse(guestCartData).cartItems.length > 0;
-          
-          if (hasGuestCartItems && !cartMerged) {
-            // Merge guest cart with user cart
-            console.log('Merging guest cart with user cart');
-            try {
-              await dispatch(mergeCart()).unwrap();
-              console.log('Cart merge completed successfully');
-            } catch (error) {
-              console.error('Error merging cart:', error);
-            }
-            setCartMerged(true);
-          } else if (!cartLoadedAfterLogin) {
-            // Just load the cart once after login
-            console.log('Loading cart after login');
-            dispatch(getCart());
-            setCartLoadedAfterLogin(true);
-          }
-        } else {
-          // For non-authenticated users, just make sure cart is loaded once
-          if (!cartLoaded) {
-            console.log('Loading guest cart');
-            dispatch(getCart());
-            setCartLoaded(true);
-            // Reset login-related flags when logged out
-            setCartMerged(false);
-            setCartLoadedAfterLogin(false);
-          }
-        }
+      try {
+        await dispatch(getCurrentUser()).unwrap();
+      } catch (error) {
+        console.warn('Failed to get current user:', error);
+      } finally {
+        setInitialAuthCheckDone(true);
       }
     };
     
-    handleCartActions();
+    if (!initialAuthCheckDone) {
+      checkAuth();
+    }
+  }, [dispatch, initialAuthCheckDone]);
+
+  // Handle cart initialization once auth is checked
+  useEffect(() => {
+    // Only proceed if auth check is complete
+    if (!initialAuthCheckDone) return;
+    
+    const initializeCart = async () => {
+      try {
+        // If authenticated and haven't attempted to merge cart
+        if (isAuthenticated && !cartMergeAttempted) {
+          // Check if there are guest cart items to merge
+          const guestCartData = localStorage.getItem('guestCart');
+          const hasGuestCartItems = guestCartData && 
+            JSON.parse(guestCartData).cartItems?.length > 0;
+          
+          if (hasGuestCartItems) {
+            console.log('Guest cart detected for authenticated user, attempting merge');
+            await dispatch(mergeCart()).unwrap();
+          } else {
+            // Just get the user's cart
+            await dispatch(getCart()).unwrap();
+          }
+          
+          // Mark cart merge as attempted
+          setCartMergeAttempted(true);
+        } 
+        // For guests or after merge completed
+        else if (!cartInitialized) {
+          await dispatch(getCart()).unwrap();
+        }
+        
+        // Mark cart as initialized
+        setCartInitialized(true);
+      } catch (error) {
+        console.error('Error initializing cart:', error);
+        // Still mark steps as complete even on error to prevent infinite attempts
+        setCartMergeAttempted(true);
+        setCartInitialized(true);
+      }
+    };
+    
+    // Prevent multiple simultaneous initialization attempts
+    if (initTimeoutRef.current) {
+      clearTimeout(initTimeoutRef.current);
+    }
+    
+    // Use timeout to ensure we don't hit the backend too rapidly
+    initTimeoutRef.current = setTimeout(() => {
+      if (!cartInitialized || (isAuthenticated && !cartMergeAttempted)) {
+        initializeCart();
+      }
+      initTimeoutRef.current = null;
+    }, 300);
+    
+    // Clean up timeout on unmount
+    return () => {
+      if (initTimeoutRef.current) {
+        clearTimeout(initTimeoutRef.current);
+        initTimeoutRef.current = null;
+      }
+    };
   }, [
     dispatch, 
     isAuthenticated, 
     initialAuthCheckDone, 
-    cartMerged, 
-    cartLoaded, 
-    cartLoadedAfterLogin
+    cartInitialized, 
+    cartMergeAttempted
   ]);
 
   // Show loading screen until initial auth check completes
-  if (!initialAuthCheckDone && !authChecked) {
+  if (!authChecked && !initialAuthCheckDone) {
     return (
       <div className="min-h-screen flex justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
