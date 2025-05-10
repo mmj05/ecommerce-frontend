@@ -58,16 +58,39 @@ export const logout = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue, dispatch }) => {
     try {
-      await authService.logout();
+      console.log("Logging out user...");
+      
+      // Try to call the logout API endpoint
+      try {
+        await authService.logout();
+        console.log("Successfully called logout endpoint");
+      } catch (error) {
+        console.warn("Error calling logout API, proceeding with client-side logout:", error);
+        // Continue with client-side logout even if API call fails
+      }
+      
       // Remove user from localStorage
       localStorage.removeItem('user');
+      console.log("Removed user from localStorage");
+      
+      // Clear any potential session cookies by setting expired cookies
+      document.cookie = "ecom-jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      console.log("Cleared potential session cookies");
+      
       // Clear the cart when logging out
       dispatch(clearCart());
+      console.log("Cleared cart");
+      
       return null;
     } catch (error) {
+      console.error("Error during logout:", error);
+      
       // Even if logout API fails, we still want to remove the user from localStorage
       localStorage.removeItem('user');
+      
+      // Also clear the cart for clean state
       dispatch(clearCart());
+      
       return rejectWithValue(error.response?.data?.message || 'Logout failed');
     }
   }

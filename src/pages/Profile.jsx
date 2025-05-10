@@ -1,21 +1,54 @@
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { FiUser, FiMail, FiShoppingBag, FiMapPin, FiCreditCard, FiEdit } from 'react-icons/fi';
+import { FiUser, FiMail, FiShoppingBag, FiMapPin, FiCreditCard } from 'react-icons/fi';
+
+// Redux actions
+import { getUserProfile } from '../features/user/userProfileSlice';
+
+// Components
+import PersonalInfo from '../components/profile/PersonalInfo';
+import Orders from '../components/profile/Orders';
+import Addresses from '../components/profile/Addresses';
+import PaymentMethods from '../components/profile/PaymentMethods';
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState('profile');
-  const { user, isAuthenticated, isLoading } = useSelector((state) => state.auth);
+  const { user, isAuthenticated, isLoading: authLoading } = useSelector((state) => state.auth);
+  const { profile, isLoading: profileLoading } = useSelector((state) => state.userProfile);
+  
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       navigate('/login', { state: { from: '/profile' } });
     }
-  }, [isAuthenticated, isLoading, navigate]);
-
-  // Show loading state while checking authentication
+  }, [isAuthenticated, authLoading, navigate]);
+  
+  // Fetch profile data when component mounts
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Check if we already have user data from auth state
+      console.log('Checking for user data...', user);
+      
+      // Only dispatch getUserProfile if we need more profile data
+      const needsFetching = !profile;
+      if (needsFetching) {
+        console.log('Fetching profile data...');
+        dispatch(getUserProfile())
+          .catch(err => {
+            console.error('Failed to fetch profile:', err);
+          });
+      } else {
+        console.log('Using existing profile data');
+      }
+    }
+  }, [dispatch, isAuthenticated, profile, user]);
+  
+  // Show loading state while checking authentication or fetching profile
+  const isLoading = authLoading || profileLoading;
   if (isLoading) {
     return (
       <div className="min-h-screen flex justify-center items-center">
@@ -23,12 +56,12 @@ const Profile = () => {
       </div>
     );
   }
-
+  
   // If not authenticated and not loading, don't render the profile content
   if (!isAuthenticated) {
     return null;
   }
-
+  
   // Only render the profile content if authenticated and user data exists
   return (
     <div className="bg-gray-50 py-8">
@@ -45,8 +78,8 @@ const Profile = () => {
                     <FiUser className="text-primary text-xl" />
                   </div>
                   <div className="ml-4">
-                    <h2 className="text-lg font-semibold text-gray-900">{user?.username}</h2>
-                    <p className="text-gray-600 text-sm">{user?.email}</p>
+                    <h2 className="text-lg font-semibold text-gray-900">{user?.username || profile?.username || "User"}</h2>
+                    <p className="text-gray-600 text-sm">{user?.email || profile?.email || "user@example.com"}</p>
                   </div>
                 </div>
               </div>
@@ -81,85 +114,19 @@ const Profile = () => {
           {/* Main Content */}
           <div className="w-full md:w-3/4 bg-white rounded-lg shadow-sm p-6">
             {activeTab === 'profile' && (
-              <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold text-gray-900">Personal Information</h2>
-                  <button className="flex items-center text-sm text-primary hover:text-primary-dark">
-                    <FiEdit className="mr-1" /> Edit
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Username</h3>
-                    <p className="text-gray-900">{user?.username || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Email</h3>
-                    <p className="text-gray-900">{user?.email || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Name</h3>
-                    <p className="text-gray-900">Not provided</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Phone</h3>
-                    <p className="text-gray-900">Not provided</p>
-                  </div>
-                </div>
-
-                <hr className="my-8" />
-
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold text-gray-900">Security</h2>
-                </div>
-
-                <button
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Change Password
-                </button>
-              </div>
+              <PersonalInfo profile={profile || user} />
             )}
 
             {activeTab === 'orders' && (
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-6">My Orders</h2>
-                <div className="bg-gray-50 p-8 rounded-md text-center">
-                  <FiShoppingBag className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No orders yet</h3>
-                  <p className="text-gray-600 mb-4">When you place orders, they will appear here.</p>
-                  <button className="btn-primary">Start Shopping</button>
-                </div>
-              </div>
+              <Orders />
             )}
 
             {activeTab === 'addresses' && (
-              <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold text-gray-900">My Addresses</h2>
-                  <button className="btn-primary text-sm">Add New Address</button>
-                </div>
-                <div className="bg-gray-50 p-8 rounded-md text-center">
-                  <FiMapPin className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No addresses saved</h3>
-                  <p className="text-gray-600">Add a shipping or billing address to your account.</p>
-                </div>
-              </div>
+              <Addresses />
             )}
 
             {activeTab === 'payment' && (
-              <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold text-gray-900">Payment Methods</h2>
-                  <button className="btn-primary text-sm">Add Payment Method</button>
-                </div>
-                <div className="bg-gray-50 p-8 rounded-md text-center">
-                  <FiCreditCard className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No payment methods saved</h3>
-                  <p className="text-gray-600">Add a credit or debit card for faster checkout.</p>
-                </div>
-              </div>
+              <PaymentMethods />
             )}
           </div>
         </div>
