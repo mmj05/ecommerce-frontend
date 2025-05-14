@@ -260,15 +260,6 @@ export const clearCart = createAsyncThunk(
   async (_, { getState }) => {
     const { auth } = getState();
     
-    if (auth.isAuthenticated) {
-      // For authenticated users, attempt to delete the cart from the server
-      try {
-        await cartService.deleteEmptyCart();
-      } catch (error) {
-        console.warn('Error clearing cart from server:', error);
-      }
-    }
-    
     // Clear local storage
     localStorage.removeItem('guestCart');
     
