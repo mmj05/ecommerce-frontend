@@ -1,46 +1,30 @@
-// src/services/authService.js - Enhanced version
-
+// src/services/authService.js - Fixed for cookie-based auth
 import api from './api';
 
 const authService = {
-  // Login user
+  // Login user - Correctly handles cookie-based auth
   login: async (userData) => {
     try {
-      console.log('Login attempt with:', userData.username);
+      // The backend sets JWT as HTTP-only cookie
       const response = await api.post('/auth/signin', userData);
       
-      // Log the entire response for debugging
-      console.log('Login API response:', response);
-      
-      // Extract JWT token from response or headers
-      let jwtToken = null;
-      
-      // Check response data for token
-      if (response.data && (response.data.jwtToken || response.data.token || response.data.accessToken)) {
-        jwtToken = response.data.jwtToken || response.data.token || response.data.accessToken;
-      }
-      
-      // Check headers for Authorization token
-      if (!jwtToken && response.headers && response.headers.authorization) {
-        jwtToken = response.headers.authorization.replace('Bearer ', '');
-      }
-      
-      // Add token to the response data
-      const enhancedResponse = {
+      // Store user info from response (no need to extract token)
+      const userInfo = {
         ...response.data,
-        jwtToken
+        isLoggedIn: true  // Add flag to indicate logged-in state
       };
       
-      console.log('Enhanced login response:', enhancedResponse);
-      return enhancedResponse;
+      // Store user info (but not JWT - it's in the HTTP-only cookie)
+      localStorage.setItem('user', JSON.stringify(userInfo));
+      
+      return userInfo;
     } catch (error) {
       console.error('Login error:', error);
-      console.error('Response:', error.response);
       throw error;
     }
   },
 
-  // Register user
+  // Register user - Unchanged
   register: async (userData) => {
     try {
       const response = await api.post('/auth/signup', userData);
@@ -53,30 +37,42 @@ const authService = {
   // Get current user details
   getCurrentUser: async () => {
     try {
+      // The cookie is sent automatically with withCredentials: true
       const response = await api.get('/auth/user');
       
-      // Save the user data with any token information
-      const userData = response.data;
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      
-      // Preserve the token if it exists
-      if (currentUser.jwtToken) {
-        userData.jwtToken = currentUser.jwtToken;
+      if (response.data) {
+        // Update user info in localStorage
+        const userInfo = {
+          ...response.data,
+          isLoggedIn: true
+        };
+        
+        localStorage.setItem('user', JSON.stringify(userInfo));
+        return userInfo;
       }
       
-      localStorage.setItem('user', JSON.stringify(userData));
-      return userData;
+      return null;
     } catch (error) {
-      throw error;
+      console.error('Failed to get current user:', error);
+      
+      // Clear user data on authentication error
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem('user');
+      }
+      
+      return null;
     }
   },
 
   // Logout user
   logout: async () => {
     try {
+      // Backend will clear the JWT cookie
       const response = await api.post('/auth/signout');
-      // Clear user from localStorage regardless of response
+      
+      // Clear user data from localStorage
       localStorage.removeItem('user');
+      
       return response.data;
     } catch (error) {
       // Still clear localStorage on error
@@ -85,13 +81,23 @@ const authService = {
     }
   },
 
-  // The rest of the methods remain the same
+  // Password reset functions (unchanged)
   requestPasswordReset: async (email) => {
-    // Implementation
+    try {
+      const response = await api.post('/auth/forgot-password', { email });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   },
 
   resetPassword: async (token, newPassword) => {
-    // Implementation
+    try {
+      const response = await api.post(`/auth/reset-password/${token}`, { newPassword });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 };
 
