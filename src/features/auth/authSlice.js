@@ -1,9 +1,10 @@
-// src/features/auth/authSlice.js
+// src/features/auth/authSlice.js - Updated for cookie-based auth
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authService from '../../services/authService';
 import { clearCart, mergeCart } from '../cart/cartSlice';
 
 // Check if user info is stored in localStorage
+// We only need basic user info, as JWT is stored in HTTP-only cookie
 const storedUser = localStorage.getItem('user') 
   ? JSON.parse(localStorage.getItem('user'))
   : null;
@@ -17,63 +18,45 @@ const initialState = {
   error: null,
 };
 
-// Login user
-// Update the login action in src/features/auth/authSlice.js
+// Login user - Updated for cookie-based auth
 export const login = createAsyncThunk(
   'auth/login',
   async (userData, { rejectWithValue, dispatch }) => {
     try {
+      // Login will set the JWT cookie and return user info
       const response = await authService.login(userData);
-      
-      // Log the response to see what we're getting
-      console.log('Login response:', response);
-      
-      // Make sure jwtToken is properly extracted from the response
-      const processedResponse = {
-        ...response,
-        // If jwtToken isn't already included, try to get it from headers or response
-        jwtToken: response.jwtToken || 
-                  response.token || 
-                  response.accessToken ||
-                  (response.headers && response.headers.authorization)
-      };
-      
-      console.log('Processed response:', processedResponse);
-      
-      // Store user in localStorage with token
-      localStorage.setItem('user', JSON.stringify(processedResponse));
       
       // After successful login, merge guest cart with user cart
       dispatch(mergeCart());
       
-      return processedResponse;
+      return response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Login failed. Please check your credentials.');
     }
   }
 );
 
-// Logout user - Enhanced to ensure cart clearing works
+// Logout user
 export const logout = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue, dispatch }) => {
     try {
+      // Logout will clear the JWT cookie
       await authService.logout();
-      // Remove user from localStorage
-      localStorage.removeItem('user');
+      
       // Clear the cart when logging out
       dispatch(clearCart());
+      
       return null;
     } catch (error) {
-      // Even if logout API fails, we still want to remove the user from localStorage
-      localStorage.removeItem('user');
+      // Even if logout API fails, still clear local data
       dispatch(clearCart());
       return rejectWithValue(error.response?.data?.message || 'Logout failed');
     }
   }
 );
 
-// Other async thunks remain the same
+// Register user
 export const register = createAsyncThunk(
   'auth/register',
   async (userData, { rejectWithValue }) => {
@@ -86,25 +69,28 @@ export const register = createAsyncThunk(
   }
 );
 
+// Get current user
 export const getCurrentUser = createAsyncThunk(
   'auth/getCurrentUser',
   async (_, { rejectWithValue }) => {
     try {
+      // Check for basic user info
       if (!localStorage.getItem('user')) {
         return null;
       }
       
+      // Get current user will validate the cookie and return user info
       const response = await authService.getCurrentUser();
-      localStorage.setItem('user', JSON.stringify(response));
       return response;
     } catch (error) {
+      // If auth fails, clear user info
       localStorage.removeItem('user');
-      console.log('Failed to get current user:', error);
       return null;
     }
   }
 );
 
+// Password reset thunks (unchanged)
 export const requestPasswordReset = createAsyncThunk(
   'auth/requestPasswordReset',
   async (email, { rejectWithValue }) => {
@@ -137,13 +123,13 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    // Add a manual logout action for use in emergency cases
+    // Add a manual logout action for emergencies
     manualLogout: (state) => {
       state.isLoading = false;
       state.isAuthenticated = false;
       state.user = null;
       state.authChecked = true;
-      // Note: We rely on the clearCart action being dispatched separately
+      localStorage.removeItem('user');
     }
   },
   extraReducers: (builder) => {
@@ -198,7 +184,7 @@ const authSlice = createSlice({
         state.authChecked = true;
       })
       
-      // Logout - Make sure we handle this correctly
+      // Logout
       .addCase(logout.pending, (state) => {
         state.isLoading = true;
       })
@@ -207,7 +193,6 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.authChecked = true;
-        // Note: The cart should already be cleared via the dispatch(clearCart()) in the thunk
       })
       .addCase(logout.rejected, (state) => {
         state.isLoading = false;
@@ -216,7 +201,7 @@ const authSlice = createSlice({
         state.authChecked = true;
       })
       
-      // Password reset flows remain the same
+      // Password reset cases unchanged
       .addCase(requestPasswordReset.pending, (state) => {
         state.isLoading = true;
         state.error = null;
