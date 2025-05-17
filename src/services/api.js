@@ -1,5 +1,4 @@
-// src/services/api.js - Updated to properly handle auth
-
+// src/services/api.js - Fixed for backend cookie-based auth
 import axios from 'axios';
 
 // Create an axios instance
@@ -8,24 +7,15 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Important for JWT cookie handling
+  // This is CRITICAL for cookie-based auth
+  withCredentials: true
 });
 
-// Add request interceptor for handling auth
+// Request interceptor - ensure credentials are always included
 api.interceptors.request.use(
   (config) => {
-    // Check for JWT in localStorage
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const token = user.jwtToken;
-    
-    // If token exists, add it to Authorization header
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    // Ensure credentials are included
+    // Always include credentials to ensure cookies are sent
     config.withCredentials = true;
-    
     return config;
   },
   (error) => {
@@ -33,17 +23,23 @@ api.interceptors.request.use(
   }
 );
 
-// Add response interceptor for handling errors
+// Response interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle 401 Unauthorized errors
+    // Handle authentication errors (401)
     if (error.response && error.response.status === 401) {
       console.error('Authentication error:', error.response.data);
       
-      // You could dispatch a logout action here if needed
-      // localStorage.removeItem('user');
-      // window.location.href = '/login';
+      // If on a protected route and not already on login page, redirect to login
+      if (!['/login', '/register'].includes(window.location.pathname)) {
+        // Save current location for redirect after login
+        localStorage.setItem('loginRedirect', window.location.pathname);
+        // Clear user data
+        localStorage.removeItem('user');
+        // Redirect to login (optional - can be handled by components)
+        // window.location.href = '/login';
+      }
     }
     
     return Promise.reject(error);
