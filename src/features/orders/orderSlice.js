@@ -1,4 +1,4 @@
-// src/features/orders/orderSlice.js
+// src/features/orders/orderSlice.js - Updated for cookie-based auth
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import orderService from '../../services/orderService';
 
@@ -10,37 +10,34 @@ const initialState = {
   error: null,
 };
 
-// Create a new order
+// Create a new order - Simplified for cookie-based auth
 export const createOrder = createAsyncThunk(
   'orders/createOrder',
   async (orderData, { rejectWithValue, getState }) => {
     try {
-      // Get auth state to check authentication
+      // Check if user is authenticated using the auth state
       const { auth } = getState();
       if (!auth.isAuthenticated) {
         return rejectWithValue('You must be logged in to place an order.');
       }
       
-      // Ensure the data format matches what the backend expects
-      // Create the proper order request object
+      // Prepare payment method - ensure it's at least 4 characters
+      let paymentMethod = orderData.paymentMethod || 'cash';
+      
+      // Clean up the order data - backend doesn't need paymentMethod in the body
       const orderRequest = {
         addressId: orderData.addressId,
-        // The rest are for payment information
-        pgName: orderData.pgName || 'NA',
+        pgName: orderData.pgName || 'COD',
         pgPaymentId: orderData.pgPaymentId || 'NA', 
         pgStatus: orderData.pgStatus || 'pending',
         pgResponseMessage: orderData.pgResponseMessage || 'Order placed'
       };
       
-      console.log('Creating order with request:', orderRequest);
-      
-      // Pass paymentMethod separately as it's used in the URL path
-      const paymentMethod = orderData.paymentMethod || 'cod';
-      
+      // Call the service (which will use cookies for auth)
       return await orderService.createOrder(orderRequest, paymentMethod);
     } catch (error) {
       console.error('Error in createOrder thunk:', error);
-      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to create order. Please try again.');
+      return rejectWithValue(error.message || 'Failed to create order. Please try again.');
     }
   }
 );
@@ -50,7 +47,7 @@ export const getUserOrders = createAsyncThunk(
   'orders/getUserOrders',
   async (_, { rejectWithValue, getState }) => {
     try {
-      // Get auth state to check authentication
+      // Check auth state
       const { auth } = getState();
       if (!auth.isAuthenticated) {
         return rejectWithValue('You must be logged in to view orders.');
@@ -58,7 +55,7 @@ export const getUserOrders = createAsyncThunk(
       
       return await orderService.getUserOrders();
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch orders');
+      return rejectWithValue(error.message || 'Failed to fetch orders');
     }
   }
 );
@@ -68,7 +65,7 @@ export const getOrderById = createAsyncThunk(
   'orders/getOrderById',
   async (orderId, { rejectWithValue, getState }) => {
     try {
-      // Get auth state to check authentication
+      // Check auth state
       const { auth } = getState();
       if (!auth.isAuthenticated) {
         return rejectWithValue('You must be logged in to view order details.');
@@ -76,7 +73,7 @@ export const getOrderById = createAsyncThunk(
       
       return await orderService.getOrderById(orderId);
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch order details');
+      return rejectWithValue(error.message || 'Failed to fetch order details');
     }
   }
 );
