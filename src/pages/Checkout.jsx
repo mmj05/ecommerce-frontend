@@ -64,10 +64,10 @@ const Checkout = () => {
 
   // Redirect to cart if it's empty
   useEffect(() => {
-    if (!cartLoading && cartItems.length === 0) {
+    if (!cartLoading && cartItems.length === 0 && !success && currentStep !== 4) {
       navigate("/cart");
     }
-  }, [cartItems, cartLoading, navigate]);
+  }, [cartItems, cartLoading, navigate, success, currentStep]);
 
   // Watch for order errors
   useEffect(() => {
@@ -141,9 +141,11 @@ const Checkout = () => {
     // Check authentication status from localStorage as a backup
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
     if (!userData.isLoggedIn) {
-      // Try to refresh authentication
-      dispatch(getCurrentUser());
+      // User is not logged in, redirect to login
       setError('Your session may have expired. Please try again or log in again.');
+      setTimeout(() => {
+        navigate('/login', { state: { from: '/checkout' } });
+      }, 1500);
       return;
     }
   
