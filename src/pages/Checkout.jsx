@@ -121,6 +121,7 @@ const Checkout = () => {
   };
 
   const handlePlaceOrder = async () => {
+    // Validation checks
     if (!selectedAddress) {
       setError("Please select a shipping address");
       return;
@@ -131,10 +132,25 @@ const Checkout = () => {
       return;
     }
   
-    // Prepare order data for Cash on Delivery
+    // Ensure user is authenticated
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: '/checkout' } });
+      return;
+    }
+  
+    // Check authentication status from localStorage as a backup
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!userData.isLoggedIn) {
+      // Try to refresh authentication
+      dispatch(getCurrentUser());
+      setError('Your session may have expired. Please try again or log in again.');
+      return;
+    }
+  
+    // Prepare order data with 'cash' as payment method (4+ chars required)
     const orderData = {
       addressId: selectedAddress.addressId,
-      paymentMethod: 'cash', // 4 characters minimum for validation
+      paymentMethod: 'cash',
       pgName: 'COD',
       pgPaymentId: 'NA',
       pgStatus: "pending",
@@ -144,19 +160,39 @@ const Checkout = () => {
     console.log('Submitting order with data:', orderData);
   
     try {
+      // Reset error state
+      setError(null);
+      
+      // Place the order
       const result = await dispatch(createOrder(orderData)).unwrap();
       console.log('Order creation successful:', result);
       
-      // Store the full order in localStorage
+      // Store the order for success page
       if (result) {
         localStorage.setItem('lastOrder', JSON.stringify(result));
+        localStorage.setItem('lastOrderId', result.orderId?.toString());
       }
       
-      // Use window.location to force a fresh page load to the success page
-      window.location.href = '/checkout/success';
+      // Clear the cart after successful order
+      dispatch(clearCart());
+      
+      // Navigate to success page
+      navigate('/checkout/success');
     } catch (err) {
       console.error("Failed to place order:", err);
-      setError(err.message || "Failed to place order. Please try again.");
+      
+      // Handle authentication errors
+      if (err.message && err.message.toLowerCase().includes('authentication')) {
+        setError('Authentication failed. Please log in again to place your order.');
+        
+        // Redirect to login after delay
+        setTimeout(() => {
+          navigate('/login', { state: { from: '/checkout' } });
+        }, 2000);
+      } else {
+        // For other errors
+        setError(err.message || "Failed to place order. Please try again.");
+      }
     }
   };
 
