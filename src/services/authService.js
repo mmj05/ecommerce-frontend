@@ -1,4 +1,4 @@
-// src/services/authService.js - Fixed for cookie-based auth
+// Fixed authService.js with updated endpoint paths
 import api from './api';
 
 const authService = {
@@ -24,7 +24,7 @@ const authService = {
     }
   },
 
-  // Register user - Unchanged
+  // Register user
   register: async (userData) => {
     try {
       const response = await api.post('/auth/signup', userData);
@@ -81,7 +81,33 @@ const authService = {
     }
   },
 
-  // Password reset functions (unchanged)
+  // Update user email - UPDATED endpoint
+  updateUserEmail: async (email) => {
+    try {
+      const response = await api.put('/profile/email', { email });
+      
+      // Update user info in localStorage
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      userData.email = email;
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Change password - UPDATED endpoint
+  changePassword: async (passwordData) => {
+    try {
+      const response = await api.put('/profile/password', passwordData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Password reset functions
   requestPasswordReset: async (email) => {
     try {
       const response = await api.post('/auth/forgot-password', { email });
