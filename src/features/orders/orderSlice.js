@@ -1,16 +1,17 @@
-// src/features/orders/orderSlice.js - Updated for cookie-based auth
+// src/features/orders/orderSlice.js - Updated for order history
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import orderService from '../../services/orderService';
 
 const initialState = {
   orders: [],
   order: null,
+  orderItems: [],
   isLoading: false,
   success: false,
   error: null,
 };
 
-// Create a new order - Simplified for cookie-based auth
+// Create a new order
 export const createOrder = createAsyncThunk(
   'orders/createOrder',
   async (orderData, { rejectWithValue, getState }) => {
@@ -24,17 +25,8 @@ export const createOrder = createAsyncThunk(
       // Prepare payment method - ensure it's at least 4 characters
       let paymentMethod = orderData.paymentMethod || 'cash';
       
-      // Clean up the order data - backend doesn't need paymentMethod in the body
-      const orderRequest = {
-        addressId: orderData.addressId,
-        pgName: orderData.pgName || 'COD',
-        pgPaymentId: orderData.pgPaymentId || 'NA', 
-        pgStatus: orderData.pgStatus || 'pending',
-        pgResponseMessage: orderData.pgResponseMessage || 'Order placed'
-      };
-      
       // Call the service (which will use cookies for auth)
-      return await orderService.createOrder(orderRequest, paymentMethod);
+      return await orderService.createOrder(orderData, paymentMethod);
     } catch (error) {
       console.error('Error in createOrder thunk:', error);
       return rejectWithValue(error.message || 'Failed to create order. Please try again.');
@@ -74,6 +66,47 @@ export const getOrderById = createAsyncThunk(
       return await orderService.getOrderById(orderId);
     } catch (error) {
       return rejectWithValue(error.message || 'Failed to fetch order details');
+    }
+  }
+);
+
+// Get order items
+export const getOrderItems = createAsyncThunk(
+  'orders/getOrderItems',
+  async (orderId, { rejectWithValue, getState }) => {
+    try {
+      // Check auth state
+      const { auth } = getState();
+      if (!auth.isAuthenticated) {
+        return rejectWithValue('You must be logged in to view order items.');
+      }
+      
+      return await orderService.getOrderItems(orderId);
+    } catch (error) {
+      return rejectWithValue(error.message || 'Failed to fetch order items');
+    }
+  }
+);
+
+// Cancel an order
+export const cancelOrder = createAsyncThunk(
+  'orders/cancelOrder',
+  async (orderId, { rejectWithValue, getState, dispatch }) => {
+    try {
+      // Check auth state
+      const { auth } = getState();
+      if (!auth.isAuthenticated) {
+        return rejectWithValue('You must be logged in to cancel an order.');
+      }
+      
+      const result = await orderService.cancelOrder(orderId);
+      
+      // Refresh orders list after cancellation
+      dispatch(getUserOrders());
+      
+      return result;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Failed to cancel order');
     }
   }
 );
@@ -121,11 +154,13 @@ const orderSlice = createSlice({
       })
       .addCase(getUserOrders.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.orders = action.payload;
+        state.orders = action.payload || [];
       })
       .addCase(getUserOrders.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+        // Ensure orders is an array even when there's an error
+        state.orders = [];
       })
       
       // Get order by ID
@@ -138,6 +173,36 @@ const orderSlice = createSlice({
         state.order = action.payload;
       })
       .addCase(getOrderById.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      
+      // Get order items
+      .addCase(getOrderItems.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(getOrderItems.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.orderItems = action.payload;
+      })
+      .addCase(getOrderItems.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        // Ensure orderItems is an array even when there's an error
+        state.orderItems = [];
+      })
+      
+      // Cancel order
+      .addCase(cancelOrder.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(cancelOrder.fulfilled, (state) => {
+        state.isLoading = false;
+        // The actual orders update will happen when getUserOrders is dispatched
+      })
+      .addCase(cancelOrder.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });
