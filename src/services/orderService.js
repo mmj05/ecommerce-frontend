@@ -1,4 +1,4 @@
-// src/services/orderService.js - Fixed for cookie-based auth
+// Updated orderService.js to match the server endpoints
 import api from './api';
 
 const orderService = {
@@ -11,9 +11,6 @@ const orderService = {
         // Ensure it's 4+ characters
         finalPaymentMethod = finalPaymentMethod === 'cod' ? 'cash' : finalPaymentMethod + '_pay';
       }
-      
-      console.log('Creating order with payment method:', finalPaymentMethod);
-      console.log('Order data:', orderData);
       
       // Check if user is logged in (based on localStorage flag)
       const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -45,10 +42,16 @@ const orderService = {
   getUserOrders: async () => {
     try {
       // The cookie will be sent automatically
-      const response = await api.get('/orders/users/all');
+      const response = await api.get('/orders/users');
       return response.data;
     } catch (error) {
       console.error('Error fetching user orders:', error);
+      
+      // If 404, return empty array instead of throwing
+      if (error.response && error.response.status === 404) {
+        return [];
+      }
+      
       throw error;
     }
   },
@@ -57,10 +60,32 @@ const orderService = {
   getOrderById: async (orderId) => {
     try {
       // The cookie will be sent automatically
-      const response = await api.get(`/orders/users/${orderId}`);
+      const response = await api.get(`/orders/${orderId}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching order ${orderId}:`, error);
+      throw error;
+    }
+  },
+  
+  // Get order items for a specific order
+  getOrderItems: async (orderId) => {
+    try {
+      const response = await api.get(`/orders/${orderId}/items`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching items for order ${orderId}:`, error);
+      throw error;
+    }
+  },
+  
+  // Cancel an order
+  cancelOrder: async (orderId) => {
+    try {
+      const response = await api.put(`/orders/${orderId}/cancel`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error canceling order ${orderId}:`, error);
       throw error;
     }
   }
