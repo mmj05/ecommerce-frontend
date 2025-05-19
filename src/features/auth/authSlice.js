@@ -1,4 +1,4 @@
-// src/features/auth/authSlice.js - Updated for cookie-based auth
+// Enhanced authSlice.js with new features
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authService from '../../services/authService';
 import { clearCart, mergeCart } from '../cart/cartSlice';
@@ -18,7 +18,7 @@ const initialState = {
   error: null,
 };
 
-// Login user - Updated for cookie-based auth
+// Login user
 export const login = createAsyncThunk(
   'auth/login',
   async (userData, { rejectWithValue, dispatch }) => {
@@ -90,7 +90,33 @@ export const getCurrentUser = createAsyncThunk(
   }
 );
 
-// Password reset thunks (unchanged)
+// Update user email
+export const updateUserEmail = createAsyncThunk(
+  'auth/updateUserEmail',
+  async ({ email }, { rejectWithValue }) => {
+    try {
+      await authService.updateUserEmail(email);
+      return { email };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update email');
+    }
+  }
+);
+
+// Change password
+export const changePassword = createAsyncThunk(
+  'auth/changePassword',
+  async (passwordData, { rejectWithValue }) => {
+    try {
+      await authService.changePassword(passwordData);
+      return true;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to change password');
+    }
+  }
+);
+
+// Password reset thunks
 export const requestPasswordReset = createAsyncThunk(
   'auth/requestPasswordReset',
   async (email, { rejectWithValue }) => {
@@ -201,7 +227,36 @@ const authSlice = createSlice({
         state.authChecked = true;
       })
       
-      // Password reset cases unchanged
+      // Update user email
+      .addCase(updateUserEmail.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateUserEmail.fulfilled, (state, action) => {
+        state.isLoading = false;
+        if (state.user) {
+          state.user.email = action.payload.email;
+        }
+      })
+      .addCase(updateUserEmail.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      
+      // Change password
+      .addCase(changePassword.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(changePassword.fulfilled, (state) => {
+        state.isLoading = false;
+      })
+      .addCase(changePassword.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      
+      // Password reset cases
       .addCase(requestPasswordReset.pending, (state) => {
         state.isLoading = true;
         state.error = null;
