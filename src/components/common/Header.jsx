@@ -1,16 +1,22 @@
-import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../../features/auth/authSlice';
-import { getCart } from '../../features/cart/cartSlice';
-import { FiShoppingCart, FiUser, FiMenu, FiX, FiSearch } from 'react-icons/fi';
+import { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { logout } from "../../features/auth/authSlice";
+import { getCart } from "../../features/cart/cartSlice";
+import { FiShoppingCart, FiUser, FiMenu, FiX, FiSearch } from "react-icons/fi";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const { isAuthenticated, user, authChecked } = useSelector((state) => state.auth);
-  const { cartItems, cartUpdated, isLoading: cartLoading } = useSelector((state) => state.cart);
+  const [searchQuery, setSearchQuery] = useState("");
+  const { isAuthenticated, user, authChecked } = useSelector(
+    (state) => state.auth
+  );
+  const {
+    cartItems,
+    cartUpdated,
+    isLoading: cartLoading,
+  } = useSelector((state) => state.cart);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const profileMenuRef = useRef(null);
@@ -23,7 +29,7 @@ const Header = () => {
       clearTimeout(cartFetchTimeoutRef.current);
       cartFetchTimeoutRef.current = null;
     }
-    
+
     // Only fetch if authenticated status is confirmed and we're not already loading
     if (authChecked && !cartLoading) {
       // Set a timeout to prevent rapid sequential fetches
@@ -32,7 +38,7 @@ const Header = () => {
         cartFetchTimeoutRef.current = null;
       }, 300);
     }
-    
+
     // Cleanup on unmount
     return () => {
       if (cartFetchTimeoutRef.current) {
@@ -44,18 +50,21 @@ const Header = () => {
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
-  
+
   // Handle clicks outside of the profile menu
   useEffect(() => {
     function handleClickOutside(event) {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target)
+      ) {
         setIsProfileMenuOpen(false);
       }
     }
-    
+
     // Attach the event listener
     document.addEventListener("mousedown", handleClickOutside);
-    
+
     // Clean up the event listener
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
@@ -66,7 +75,7 @@ const Header = () => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/products?search=${searchQuery}`);
-      setSearchQuery('');
+      setSearchQuery("");
       setIsMenuOpen(false); // Close mobile menu after search
     }
   };
@@ -75,14 +84,17 @@ const Header = () => {
     try {
       await dispatch(logout()).unwrap();
       // After logout completes, redirect to home
-      navigate('/');
+      navigate("/");
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
     }
   };
 
   // Calculate total cart items quantity
-  const cartItemsQuantity = cartItems.reduce((total, item) => total + item.quantity, 0);
+  const cartItemsQuantity = cartItems.reduce(
+    (total, item) => total + item.quantity,
+    0
+  );
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
@@ -119,23 +131,36 @@ const Header = () => {
             <Link to="/products" className="text-gray-700 hover:text-primary">
               Products
             </Link>
-            
+            <Link to="/categories" className="text-gray-700 hover:text-primary">
+              Categories
+            </Link>
+
             {isAuthenticated ? (
               <div className="relative" ref={profileMenuRef}>
-                <button 
-                  className={`flex items-center ${isProfileMenuOpen ? 'text-primary' : 'text-gray-700 hover:text-primary'}`}
+                <button
+                  className={`flex items-center ${
+                    isProfileMenuOpen
+                      ? "text-primary"
+                      : "text-gray-700 hover:text-primary"
+                  }`}
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                 >
                   <FiUser className="mr-1" />
-                  {user?.username || 'User'}
-                  <svg 
-                    className={`ml-1 h-5 w-5 transition-transform duration-200 ${isProfileMenuOpen ? 'rotate-180' : ''}`} 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    viewBox="0 0 20 20" 
-                    fill="currentColor" 
+                  {user?.username || "User"}
+                  <svg
+                    className={`ml-1 h-5 w-5 transition-transform duration-200 ${
+                      isProfileMenuOpen ? "rotate-180" : ""
+                    }`}
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
                     aria-hidden="true"
                   >
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </button>
                 {isProfileMenuOpen && (
@@ -174,7 +199,7 @@ const Header = () => {
                 Login
               </Link>
             )}
-            
+
             <Link
               to="/cart"
               className="relative text-gray-700 hover:text-primary"
@@ -182,7 +207,7 @@ const Header = () => {
               <FiShoppingCart size={22} />
               {cartItemsQuantity > 0 && (
                 <span className="absolute -top-2 -right-2 bg-primary text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                  {cartItemsQuantity > 99 ? '99+' : cartItemsQuantity}
+                  {cartItemsQuantity > 99 ? "99+" : cartItemsQuantity}
                 </span>
               )}
             </Link>
@@ -230,7 +255,14 @@ const Header = () => {
               >
                 Products
               </Link>
-              
+              <Link
+                to="/categories"
+                className="text-gray-700 hover:text-primary"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Categories
+              </Link>
+
               {isAuthenticated ? (
                 <>
                   <Link
@@ -269,7 +301,7 @@ const Header = () => {
                   Login
                 </Link>
               )}
-              
+
               <Link
                 to="/cart"
                 className="flex items-center text-gray-700 hover:text-primary"
@@ -279,7 +311,7 @@ const Header = () => {
                 Cart
                 {cartItemsQuantity > 0 && (
                   <span className="ml-2 bg-primary text-white text-xs px-2 py-1 rounded-full">
-                    {cartItemsQuantity > 99 ? '99+' : cartItemsQuantity}
+                    {cartItemsQuantity > 99 ? "99+" : cartItemsQuantity}
                   </span>
                 )}
               </Link>
