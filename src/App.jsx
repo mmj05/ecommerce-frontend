@@ -18,11 +18,14 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
+import Categories from "./pages/Categories"; // Add this line
+import CategoryManagement from "./pages/admin/CategoryManagement"; // Add this line (optional for admin)
 
 // Components
 import Header from "./components/common/Header";
 import Footer from "./components/common/Footer";
 import ProtectedRoute from "./components/common/ProtectedRoute";
+import AdminRoute from "./components/common/AdminRoute"; // You'll need to create this component
 
 function App() {
   const dispatch = useDispatch();
@@ -144,15 +147,20 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/categories" element={<Categories />} /> {/* Add this route */}
 
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/profile" element={<Profile />} />
-              <Route path="/orders" element={<Profile />} />{" "}
-              {/* Route to profile page with orders tab active */}
+              <Route path="/orders" element={<Profile />} />
               <Route path="/checkout/success" element={<PaymentSuccess />} />
               <Route path="/checkout/cancel" element={<PaymentCancel />} />
+            </Route>
+
+            {/* Admin Routes - Optional */}
+            <Route element={<AdminRoute />}>
+              <Route path="/admin/categories" element={<CategoryManagement />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
