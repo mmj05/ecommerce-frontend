@@ -1,12 +1,13 @@
+// src/components/home/CategoriesShowcase.jsx - FIXED
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { fetchAllCategories } from '../../features/products/productSlice';
+import { fetchAllCategories } from '../../features/categories/categorySlice'; // FIXED: import from categorySlice instead of productSlice
 import { FiShoppingBag, FiSmartphone, FiHome, FiHeart, FiWatch, FiBookOpen, FiGift } from 'react-icons/fi';
 
 const CategoriesShowcase = () => {
   const dispatch = useDispatch();
-  const { categories, isLoading } = useSelector((state) => state.products);
+  const { categories, isLoading } = useSelector((state) => state.categories); // FIXED: use categories state from categorySlice
 
   useEffect(() => {
     dispatch(fetchAllCategories({ pageNumber: 0, pageSize: 10, sortBy: 'categoryId', sortOrder: 'asc' }));
