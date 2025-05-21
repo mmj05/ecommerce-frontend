@@ -5,9 +5,9 @@ import { Helmet } from 'react-helmet';
 import { 
   fetchAllProducts, 
   fetchProductsByCategory, 
-  searchProducts,
-  fetchAllCategories
+  searchProducts
 } from '../features/products/productSlice';
+import { fetchAllCategories } from '../features/categories/categorySlice';
 
 // Components
 import ProductsHeader from '../components/products/ProductsHeader';
@@ -29,7 +29,8 @@ const Products = () => {
   const sortBy = searchParams.get('sortBy') || 'productId';
   const sortOrder = searchParams.get('sortOrder') || 'asc';
   
-  const { products, categories, isLoading, error, pagination } = useSelector((state) => state.products);
+  const { products, isLoading, error, pagination } = useSelector((state) => state.products);
+  const { categories } = useSelector((state) => state.categories);
 
   useEffect(() => {
     // Load all categories on component mount (used for filters)
