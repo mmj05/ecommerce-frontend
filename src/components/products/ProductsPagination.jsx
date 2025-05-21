@@ -1,6 +1,7 @@
+// src/components/products/ProductPagination.jsx
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
-const ProductsPagination = ({ currentPage, totalPages, onPageChange }) => {
+const ProductPagination = ({ currentPage, totalPages, onPageChange }) => {
   // No need to show pagination if there's only one page
   if (totalPages <= 1) return null;
   
@@ -26,7 +27,7 @@ const ProductsPagination = ({ currentPage, totalPages, onPageChange }) => {
   const pageNumbers = getPageNumbers();
   
   return (
-    <div className="flex justify-center items-center">
+    <div className="flex justify-center items-center mt-6">
       <nav className="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
         {/* Previous button */}
         <button
@@ -75,4 +76,4 @@ const ProductsPagination = ({ currentPage, totalPages, onPageChange }) => {
   );
 };
 
-export default ProductsPagination;
+export default ProductPagination;
