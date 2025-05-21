@@ -1,26 +1,26 @@
+// Updated Header component with seller and admin links
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../../features/auth/authSlice";
 import { getCart } from "../../features/cart/cartSlice";
-import { FiShoppingCart, FiUser, FiMenu, FiX, FiSearch } from "react-icons/fi";
+import { FiShoppingCart, FiUser, FiMenu, FiX, FiSearch, FiPackage, FiGrid, FiShoppingBag } from "react-icons/fi";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const { isAuthenticated, user, authChecked } = useSelector(
-    (state) => state.auth
-  );
-  const {
-    cartItems,
-    cartUpdated,
-    isLoading: cartLoading,
-  } = useSelector((state) => state.cart);
+  const { isAuthenticated, user, authChecked } = useSelector((state) => state.auth);
+  const { cartItems, cartUpdated, isLoading: cartLoading } = useSelector((state) => state.cart);
+  
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const profileMenuRef = useRef(null);
   const cartFetchTimeoutRef = useRef(null);
+
+  // Check if user is a seller or admin
+  const isSeller = user?.roles?.includes('ROLE_SELLER') || user?.roles?.includes('ROLE_ADMIN');
+  const isAdmin = user?.roles?.includes('ROLE_ADMIN');
 
   // Fetch cart data when component mounts or cart is updated
   useEffect(() => {
@@ -180,6 +180,39 @@ const Header = () => {
                       >
                         My Orders
                       </Link>
+                      
+                      {/* Seller/Admin links */}
+                      {isSeller && (
+                        <Link
+                          to="/seller/dashboard"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          Seller Dashboard
+                        </Link>
+                      )}
+                      
+                      {isAdmin && (
+                        <>
+                          <Link
+                            to="/admin/products"
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            onClick={() => setIsProfileMenuOpen(false)}
+                          >
+                            Product Management
+                          </Link>
+                          <Link
+                            to="/admin/categories"
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            onClick={() => setIsProfileMenuOpen(false)}
+                          >
+                            Category Management
+                          </Link>
+                        </>
+                      )}
+                      
+                      <div className="border-t border-gray-100 my-1"></div>
+                      
                       <button
                         onClick={() => {
                           handleLogout();
@@ -278,9 +311,43 @@ const Header = () => {
                     className="text-gray-700 hover:text-primary flex items-center"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <FiShoppingCart className="mr-2" />
+                    <FiShoppingBag className="mr-2" />
                     My Orders
                   </Link>
+                  
+                  {/* Seller/Admin mobile links */}
+                  {isSeller && (
+                    <Link
+                      to="/seller/dashboard"
+                      className="text-gray-700 hover:text-primary flex items-center"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <FiPackage className="mr-2" />
+                      Seller Dashboard
+                    </Link>
+                  )}
+                  
+                  {isAdmin && (
+                    <>
+                      <Link
+                        to="/admin/products"
+                        className="text-gray-700 hover:text-primary flex items-center"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <FiPackage className="mr-2" />
+                        Product Management
+                      </Link>
+                      <Link
+                        to="/admin/categories"
+                        className="text-gray-700 hover:text-primary flex items-center"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <FiGrid className="mr-2" />
+                        Category Management
+                      </Link>
+                    </>
+                  )}
+                  
                   <button
                     onClick={() => {
                       handleLogout();
