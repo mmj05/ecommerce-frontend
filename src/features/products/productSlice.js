@@ -1,9 +1,9 @@
+// src/features/products/productSlice.js - Enhanced version
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import productService from '../../services/productService';
 
 const initialState = {
   products: [],
-  categories: [],
   featuredProducts: [],
   product: null, // For single product details
   isLoading: false,
@@ -63,13 +63,50 @@ export const searchProducts = createAsyncThunk(
   }
 );
 
-export const fetchAllCategories = createAsyncThunk(
-  'products/fetchCategories',
-  async ({ pageNumber, pageSize, sortBy, sortOrder }, { rejectWithValue }) => {
+// Create a new product
+export const createProduct = createAsyncThunk(
+  'products/create',
+  async (productData, { rejectWithValue }) => {
     try {
-      return await productService.getAllCategories(pageNumber, pageSize, sortBy, sortOrder);
+      return await productService.createProduct(productData);
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch categories');
+      return rejectWithValue(error.response?.data?.message || 'Failed to create product');
+    }
+  }
+);
+
+// Update a product
+export const updateProduct = createAsyncThunk(
+  'products/update',
+  async ({ productId, productData }, { rejectWithValue }) => {
+    try {
+      return await productService.updateProduct(productId, productData);
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update product');
+    }
+  }
+);
+
+// Delete a product
+export const deleteProduct = createAsyncThunk(
+  'products/delete',
+  async (productId, { rejectWithValue }) => {
+    try {
+      return await productService.deleteProduct(productId);
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete product');
+    }
+  }
+);
+
+// Upload product image
+export const uploadProductImage = createAsyncThunk(
+  'products/uploadImage',
+  async ({ productId, imageFile }, { rejectWithValue }) => {
+    try {
+      return await productService.uploadProductImage(productId, imageFile);
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to upload product image');
     }
   }
 );
@@ -82,6 +119,12 @@ const productSlice = createSlice({
     clearProductError: (state) => {
       state.error = null;
     },
+    setProduct: (state, action) => {
+      state.product = action.payload;
+    },
+    clearProduct: (state) => {
+      state.product = null;
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -166,21 +209,77 @@ const productSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Fetch all categories
-      .addCase(fetchAllCategories.pending, (state) => {
+      // Create product
+      .addCase(createProduct.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchAllCategories.fulfilled, (state, action) => {
+      .addCase(createProduct.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.categories = action.payload.content;
+        state.products = [action.payload, ...state.products];
       })
-      .addCase(fetchAllCategories.rejected, (state, action) => {
+      .addCase(createProduct.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+
+      // Update product
+      .addCase(updateProduct.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateProduct.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.products = state.products.map(product => 
+          product.productId === action.payload.productId ? action.payload : product
+        );
+        state.product = null; // Clear selected product after update
+      })
+      .addCase(updateProduct.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+
+      // Delete product
+      .addCase(deleteProduct.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteProduct.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.products = state.products.filter(
+          product => product.productId !== action.payload.productId
+        );
+      })
+      .addCase(deleteProduct.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+
+      // Upload product image
+      .addCase(uploadProductImage.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(uploadProductImage.fulfilled, (state, action) => {
+        state.isLoading = false;
+        // Update product image in state
+        if (state.product && state.product.productId === action.payload.productId) {
+          state.product.image = action.payload.image;
+        }
+        // Also update in products list
+        state.products = state.products.map(product => 
+          product.productId === action.payload.productId 
+            ? { ...product, image: action.payload.image } 
+            : product
+        );
+      })
+      .addCase(uploadProductImage.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });
   },
 });
 
-export const { clearProductError } = productSlice.actions;
+export const { clearProductError, setProduct, clearProduct } = productSlice.actions;
 export default productSlice.reducer;
