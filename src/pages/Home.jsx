@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { Helmet } from 'react-helmet';
-import { fetchAllProducts, fetchAllCategories } from '../features/products/productSlice';
+import { fetchAllProducts } from '../features/products/productSlice';
+import { fetchAllCategories } from '../features/categories/categorySlice';
 
 // Components
 import Hero from '../components/home/Hero';
