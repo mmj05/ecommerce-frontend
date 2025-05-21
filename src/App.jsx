@@ -1,3 +1,4 @@
+// src/App.jsx - Updated with seller and admin routes
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -18,14 +19,19 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
-import Categories from "./pages/Categories"; // Add this line
-import CategoryManagement from "./pages/admin/CategoryManagement"; // Add this line (optional for admin)
+import Categories from "./pages/Categories";
+
+// Admin and Seller pages
+import SellerDashboard from "./pages/seller/SellerDashboard";
+import ProductManagement from "./pages/admin/ProductManagement";
+import CategoryManagement from "./pages/admin/CategoryManagement";
 
 // Components
 import Header from "./components/common/Header";
 import Footer from "./components/common/Footer";
 import ProtectedRoute from "./components/common/ProtectedRoute";
-import AdminRoute from "./components/common/AdminRoute"; // You'll need to create this component
+import AdminRoute from "./components/common/AdminRoute";
+import SellerRoute from "./components/common/SellerRoute";
 
 function App() {
   const dispatch = useDispatch();
@@ -69,9 +75,7 @@ function App() {
             guestCartData && JSON.parse(guestCartData).cartItems?.length > 0;
 
           if (hasGuestCartItems) {
-            console.log(
-              "Guest cart detected for authenticated user, attempting merge"
-            );
+            console.log("Guest cart detected for authenticated user, attempting merge");
             await dispatch(mergeCart()).unwrap();
           } else {
             // Just get the user's cart
@@ -147,7 +151,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
-            <Route path="/categories" element={<Categories />} /> {/* Add this route */}
+            <Route path="/categories" element={<Categories />} />
 
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
@@ -158,8 +162,16 @@ function App() {
               <Route path="/checkout/cancel" element={<PaymentCancel />} />
             </Route>
 
-            {/* Admin Routes - Optional */}
+            {/* Seller Routes */}
+            <Route element={<SellerRoute />}>
+              <Route path="/seller/dashboard" element={<SellerDashboard />} />
+              <Route path="/seller/products" element={<SellerDashboard />} />
+              <Route path="/seller/orders" element={<SellerDashboard />} />
+            </Route>
+
+            {/* Admin Routes */}
             <Route element={<AdminRoute />}>
+              <Route path="/admin/products" element={<ProductManagement />} />
               <Route path="/admin/categories" element={<CategoryManagement />} />
             </Route>
 
