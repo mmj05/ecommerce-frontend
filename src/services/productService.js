@@ -1,4 +1,4 @@
-// src/services/productService.js - Enhanced for seller/admin features
+// src/services/productService.js - Enhanced for seller/admin features with permissions
 import api from './api';
 
 const productService = {
@@ -47,7 +47,7 @@ const productService = {
     }
   },
 
-  // Update product - Seller/Admin only
+  // Update product - Only product owner (seller) can update
   updateProduct: async (productId, productData) => {
     try {
       const response = await api.put(`/admin/products/${productId}`, productData);
@@ -58,7 +58,7 @@ const productService = {
     }
   },
 
-  // Delete product - Seller/Admin only
+  // Delete product - Admin can delete any, Seller can delete only their own
   deleteProduct: async (productId) => {
     try {
       const response = await api.delete(`/admin/products/${productId}`);
@@ -69,7 +69,7 @@ const productService = {
     }
   },
 
-  // Upload product image - Seller/Admin only
+  // Upload product image - Only product owner (seller) can update
   uploadProductImage: async (productId, imageFile) => {
     try {
       // Create form data
@@ -89,30 +89,6 @@ const productService = {
     }
   },
   
-  // Bulk upload product images - Seller/Admin only
-  uploadProductImages: async (productId, imageFiles) => {
-    try {
-      // Create form data with multiple images
-      const formData = new FormData();
-      
-      // Append each image to form data
-      imageFiles.forEach((file, index) => {
-        formData.append('images', file);
-      });
-      
-      const response = await api.post(`/admin/products/${productId}/images/bulk`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      
-      return response.data;
-    } catch (error) {
-      console.error(`Error uploading images for product ${productId}:`, error);
-      throw error;
-    }
-  },
-
   // Get seller's products - Seller only
   getSellerProducts: async (pageNumber = 0, pageSize = 10, sortBy = 'productId', sortOrder = 'desc') => {
     try {
@@ -123,6 +99,28 @@ const productService = {
     } catch (error) {
       console.error('Error fetching seller products:', error);
       throw error;
+    }
+  },
+
+  // Check if current user can edit a specific product
+  canEditProduct: async (productId) => {
+    try {
+      const response = await api.get(`/products/${productId}/can-edit`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error checking edit permission for product ${productId}:`, error);
+      return false;
+    }
+  },
+
+  // Check if current user can delete a specific product
+  canDeleteProduct: async (productId) => {
+    try {
+      const response = await api.get(`/products/${productId}/can-delete`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error checking delete permission for product ${productId}:`, error);
+      return false;
     }
   }
 };
