@@ -1,10 +1,9 @@
-// src/pages/seller/SellerDashboard.jsx
+// src/pages/seller/SellerDashboard.jsx - Updated to use seller-specific endpoints
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Helmet } from 'react-helmet';
 import { FiPlus, FiAlertCircle, FiCheckCircle, FiShoppingBag, FiDollarSign, FiPackage, FiUsers } from 'react-icons/fi';
 import { 
-  fetchAllProducts,
   createProduct,
   updateProduct,
   deleteProduct,
@@ -12,6 +11,7 @@ import {
   clearProduct 
 } from '../../features/products/productSlice';
 import { fetchAllCategories } from '../../features/categories/categorySlice';
+import productService from '../../services/productService';
 
 // Components
 import ProductList from '../../components/products/ProductList';
@@ -24,21 +24,27 @@ const SellerDashboard = () => {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('products');
+  const [sellerProducts, setSellerProducts] = useState([]);
+  const [sellerPagination, setSellerPagination] = useState({
+    pageNumber: 0,
+    pageSize: 10,
+    totalPages: 0,
+    totalElements: 0,
+    lastPage: false
+  });
+  const [isLoading, setIsLoading] = useState(false);
   
   const { 
-    products, 
     product, 
-    isLoading: productsLoading, 
-    error: productError, 
-    pagination 
+    error: productError
   } = useSelector((state) => state.products);
   
   const { categories, isLoading: categoriesLoading } = useSelector((state) => state.categories);
   
-  // Load products and categories on component mount
+  // Load seller's products and categories on component mount
   useEffect(() => {
     if (activeTab === 'products') {
-      loadProducts();
+      loadSellerProducts();
       // Load categories for the product form
       dispatch(fetchAllCategories({ 
         pageNumber: 0, 
@@ -57,17 +63,28 @@ const SellerDashboard = () => {
     }
   }, [productError]);
   
-  const loadProducts = (pageNumber = 0) => {
-    dispatch(fetchAllProducts({ 
-      pageNumber, 
-      pageSize: 10, 
-      sortBy: 'productId', 
-      sortOrder: 'desc' 
-    }));
+  const loadSellerProducts = async (pageNumber = 0) => {
+    setIsLoading(true);
+    try {
+      const response = await productService.getSellerProducts(pageNumber, 10, 'productId', 'desc');
+      setSellerProducts(response.content || []);
+      setSellerPagination({
+        pageNumber: response.pageNumber || 0,
+        pageSize: response.pageSize || 10,
+        totalPages: response.totalPages || 0,
+        totalElements: response.totalElements || 0,
+        lastPage: response.lastPage || false
+      });
+    } catch (error) {
+      console.error('Error loading seller products:', error);
+      setError('Failed to load your products');
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const handlePageChange = (newPage) => {
-    loadProducts(newPage);
+    loadSellerProducts(newPage);
   };
   
   const handleAddProduct = () => {
@@ -87,8 +104,8 @@ const SellerDashboard = () => {
         setSuccess('Product deleted successfully');
         setError('');
         
-        // Reload products to get updated list
-        loadProducts(pagination.pageNumber);
+        // Reload seller's products
+        loadSellerProducts(sellerPagination.pageNumber);
       } catch (error) {
         setError(error || 'Failed to delete product');
         setSuccess('');
@@ -107,8 +124,11 @@ const SellerDashboard = () => {
         
         // Handle image upload if needed
         if (images && images.length > 0) {
-          // In a real app, you would upload the images here
-          console.log('Uploading images for existing product:', images);
+          try {
+            await productService.uploadProductImage(productData.productId, images[0]);
+          } catch (imageError) {
+            console.warn('Failed to upload image:', imageError);
+          }
         }
         
         setSuccess('Product updated successfully');
@@ -118,8 +138,11 @@ const SellerDashboard = () => {
         
         // Handle image upload if needed
         if (images && images.length > 0 && result.productId) {
-          // In a real app, you would upload the images here
-          console.log('Uploading images for new product:', images);
+          try {
+            await productService.uploadProductImage(result.productId, images[0]);
+          } catch (imageError) {
+            console.warn('Failed to upload image:', imageError);
+          }
         }
         
         setSuccess('Product added successfully');
@@ -128,8 +151,8 @@ const SellerDashboard = () => {
       setError('');
       setShowForm(false);
       
-      // Reload products to get updated list
-      loadProducts(pagination.pageNumber);
+      // Reload seller's products
+      loadSellerProducts(sellerPagination.pageNumber);
     } catch (error) {
       setError(error || 'Failed to save product');
       setSuccess('');
@@ -168,9 +191,6 @@ const SellerDashboard = () => {
     </div>
   );
   
-  // Loading state
-  const isLoading = productsLoading || categoriesLoading;
-  
   return (
     <>
       <Helmet>
@@ -202,7 +222,7 @@ const SellerDashboard = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Products
+                My Products
               </button>
               <button
                 onClick={() => setActiveTab('orders')}
@@ -240,8 +260,8 @@ const SellerDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <StatCard 
                   icon={<FiPackage className="text-blue-500 text-2xl" />}
-                  title="Total Products" 
-                  value={pagination?.totalElements || 0}
+                  title="My Products" 
+                  value={sellerPagination.totalElements || 0}
                   color="border-blue-500"
                 />
                 <StatCard 
@@ -300,6 +320,10 @@ const SellerDashboard = () => {
             <div>
               {/* Product management */}
               <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">My Products</h2>
+                  <p className="text-gray-600">Manage products that you've created</p>
+                </div>
                 {!showForm && (
                   <button 
                     onClick={handleAddProduct} 
@@ -318,7 +342,7 @@ const SellerDashboard = () => {
                     categories={categories}
                     onSave={handleSaveProduct} 
                     onCancel={handleCancelForm}
-                    isSubmitting={isLoading}
+                    isSubmitting={isLoading || categoriesLoading}
                   />
                 </div>
               )}
@@ -331,14 +355,15 @@ const SellerDashboard = () => {
               ) : (
                 <>
                   <ProductList 
-                    products={products} 
+                    products={sellerProducts} 
                     onEditProduct={handleEditProduct} 
                     onDeleteProduct={handleDeleteProduct}
+                    showPermissions={false} // Don't show permission checks for seller's own products
                   />
                   
                   <ProductPagination 
-                    currentPage={pagination?.pageNumber || 0}
-                    totalPages={pagination?.totalPages || 0}
+                    currentPage={sellerPagination.pageNumber}
+                    totalPages={sellerPagination.totalPages}
                     onPageChange={handlePageChange}
                   />
                 </>
