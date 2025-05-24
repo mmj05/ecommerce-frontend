@@ -1,8 +1,8 @@
-// src/pages/seller/SellerDashboard.jsx - Updated to use seller-specific endpoints
+// src/pages/seller/SellerDashboard.jsx - Updated with functional overview and orders
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Helmet } from 'react-helmet';
-import { FiPlus, FiAlertCircle, FiCheckCircle, FiShoppingBag, FiDollarSign, FiPackage, FiUsers } from 'react-icons/fi';
+import { FiPlus, FiAlertCircle, FiCheckCircle, FiShoppingBag, FiDollarSign, FiPackage, FiUsers, FiTrendingUp, FiCalendar } from 'react-icons/fi';
 import { 
   createProduct,
   updateProduct,
@@ -11,19 +11,29 @@ import {
   clearProduct 
 } from '../../features/products/productSlice';
 import { fetchAllCategories } from '../../features/categories/categorySlice';
+import { 
+  fetchDashboardStats, 
+  fetchSellerOrders, 
+  fetchSellerOrderById,
+  updateSellerOrderStatus,
+  clearSellerError 
+} from '../../features/seller/sellerSlice';
 import productService from '../../services/productService';
 
 // Components
 import ProductList from '../../components/products/ProductList';
 import ProductForm from '../../components/products/ProductForm';
 import ProductPagination from '../../components/products/ProductPagination';
+import SellerOrderList from '../../components/seller/SellerOrderList';
+import SellerOrderDetails from '../../components/seller/SellerOrderDetails';
 
 const SellerDashboard = () => {
   const dispatch = useDispatch();
   const [showForm, setShowForm] = useState(false);
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('products');
+  const [activeTab, setActiveTab] = useState('overview');
   const [sellerProducts, setSellerProducts] = useState([]);
   const [sellerPagination, setSellerPagination] = useState({
     pageNumber: 0,
@@ -33,6 +43,10 @@ const SellerDashboard = () => {
     lastPage: false
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [ordersPagination, setOrdersPagination] = useState({
+    pageNumber: 0,
+    pageSize: 10
+  });
   
   const { 
     product, 
@@ -41,9 +55,20 @@ const SellerDashboard = () => {
   
   const { categories, isLoading: categoriesLoading } = useSelector((state) => state.categories);
   
-  // Load seller's products and categories on component mount
+  const { 
+    dashboardStats, 
+    orders, 
+    currentOrder,
+    pagination: orderPagination,
+    isLoading: sellerLoading,
+    error: sellerError 
+  } = useSelector((state) => state.seller);
+  
+  // Load data based on active tab
   useEffect(() => {
-    if (activeTab === 'products') {
+    if (activeTab === 'overview') {
+      dispatch(fetchDashboardStats());
+    } else if (activeTab === 'products') {
       loadSellerProducts();
       // Load categories for the product form
       dispatch(fetchAllCategories({ 
@@ -52,16 +77,22 @@ const SellerDashboard = () => {
         sortBy: 'categoryName', 
         sortOrder: 'asc' 
       }));
+    } else if (activeTab === 'orders') {
+      loadSellerOrders();
     }
   }, [dispatch, activeTab]);
   
-  // Watch for product errors
+  // Watch for errors
   useEffect(() => {
     if (productError) {
       setError(productError);
       setSuccess('');
     }
-  }, [productError]);
+    if (sellerError) {
+      setError(sellerError);
+      setSuccess('');
+    }
+  }, [productError, sellerError]);
   
   const loadSellerProducts = async (pageNumber = 0) => {
     setIsLoading(true);
@@ -83,8 +114,22 @@ const SellerDashboard = () => {
     }
   };
   
+  const loadSellerOrders = (pageNumber = ordersPagination.pageNumber) => {
+    dispatch(fetchSellerOrders({ 
+      pageNumber, 
+      pageSize: 10, 
+      sortBy: 'orderDate', 
+      sortOrder: 'DESC' 
+    }));
+    setOrdersPagination(prev => ({ ...prev, pageNumber }));
+  };
+  
   const handlePageChange = (newPage) => {
-    loadSellerProducts(newPage);
+    if (activeTab === 'products') {
+      loadSellerProducts(newPage);
+    } else if (activeTab === 'orders') {
+      loadSellerOrders(newPage);
+    }
   };
   
   const handleAddProduct = () => {
@@ -104,8 +149,9 @@ const SellerDashboard = () => {
         setSuccess('Product deleted successfully');
         setError('');
         
-        // Reload seller's products
+        // Reload seller's products and update stats
         loadSellerProducts(sellerPagination.pageNumber);
+        dispatch(fetchDashboardStats());
       } catch (error) {
         setError(error || 'Failed to delete product');
         setSuccess('');
@@ -151,8 +197,9 @@ const SellerDashboard = () => {
       setError('');
       setShowForm(false);
       
-      // Reload seller's products
+      // Reload seller's products and update stats
       loadSellerProducts(sellerPagination.pageNumber);
+      dispatch(fetchDashboardStats());
     } catch (error) {
       setError(error || 'Failed to save product');
       setSuccess('');
@@ -164,28 +211,59 @@ const SellerDashboard = () => {
     dispatch(clearProduct());
   };
   
+  const handleViewOrder = (orderId) => {
+    dispatch(fetchSellerOrderById(orderId));
+    setShowOrderDetails(true);
+  };
+  
+  const handleUpdateOrderStatus = async (orderId, status) => {
+    try {
+      await dispatch(updateSellerOrderStatus({ orderId, status })).unwrap();
+      setSuccess('Order status updated successfully');
+      setShowOrderDetails(false);
+      // Refresh stats after update
+      dispatch(fetchDashboardStats());
+    } catch (error) {
+      setError(error || 'Failed to update order status');
+    }
+  };
+  
   // Clear messages after 5 seconds
   useEffect(() => {
     if (success || error) {
       const timer = setTimeout(() => {
         setSuccess('');
         setError('');
+        dispatch(clearSellerError());
       }, 5000);
       
       return () => clearTimeout(timer);
     }
-  }, [success, error]);
+  }, [success, error, dispatch]);
+  
+  // Format currency
+  const formatCurrency = (amount) => {
+    return `$${Number(amount).toFixed(2)}`;
+  };
   
   // Stats cards for dashboard overview
-  const StatCard = ({ icon, title, value, color }) => (
+  const StatCard = ({ icon, title, value, color, trend }) => (
     <div className={`bg-white rounded-lg shadow-sm p-6 border-l-4 ${color}`}>
-      <div className="flex items-center">
-        <div className="mr-4">
-          {icon}
-        </div>
+      <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-600">{title}</p>
-          <p className="text-2xl font-bold">{value}</p>
+          <p className="text-2xl font-bold mt-1">
+            {title.includes('Sales') ? formatCurrency(value) : value}
+          </p>
+          {trend && (
+            <p className="text-xs text-gray-500 mt-1 flex items-center">
+              <FiTrendingUp className="mr-1" />
+              {trend}
+            </p>
+          )}
+        </div>
+        <div className="text-3xl opacity-80">
+          {icon}
         </div>
       </div>
     </div>
@@ -259,35 +337,70 @@ const SellerDashboard = () => {
               {/* Stats cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <StatCard 
-                  icon={<FiPackage className="text-blue-500 text-2xl" />}
+                  icon={<FiPackage />}
                   title="My Products" 
-                  value={sellerPagination.totalElements || 0}
+                  value={dashboardStats.totalProducts || 0}
                   color="border-blue-500"
                 />
                 <StatCard 
-                  icon={<FiDollarSign className="text-green-500 text-2xl" />}
+                  icon={<FiDollarSign />}
                   title="Total Sales" 
-                  value="$0.00"
+                  value={dashboardStats.totalSales || 0}
                   color="border-green-500"
                 />
                 <StatCard 
-                  icon={<FiShoppingBag className="text-purple-500 text-2xl" />}
+                  icon={<FiShoppingBag />}
                   title="Orders" 
-                  value="0"
+                  value={dashboardStats.totalOrders || 0}
                   color="border-purple-500"
                 />
                 <StatCard 
-                  icon={<FiUsers className="text-orange-500 text-2xl" />}
+                  icon={<FiUsers />}
                   title="Customers" 
-                  value="0"
+                  value={dashboardStats.totalCustomers || 0}
                   color="border-orange-500"
                 />
               </div>
               
-              {/* Recent activity placeholder */}
+              {/* Recent activity */}
               <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
                 <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h2>
-                <p className="text-gray-600">No recent activity to display.</p>
+                {orders && orders.length > 0 ? (
+                  <div className="space-y-4">
+                    {orders.slice(0, 5).map((order) => (
+                      <div key={order.orderId} className="flex items-center justify-between py-3 border-b last:border-0">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            Order #{order.orderId}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(order.orderDate).toLocaleDateString()} - {order.email}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-gray-900">
+                            {formatCurrency(order.sellerTotal || 0)}
+                          </p>
+                          <p className={`text-xs inline-flex px-2 py-1 rounded-full ${
+                            order.orderStatus.toLowerCase().includes('ship') 
+                              ? 'text-blue-600 bg-blue-100' 
+                              : 'text-yellow-600 bg-yellow-100'
+                          }`}>
+                            {order.orderStatus}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => setActiveTab('orders')}
+                      className="text-sm text-primary hover:text-primary-dark"
+                    >
+                      View all orders →
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-gray-600">No recent activity to display.</p>
+                )}
               </div>
               
               {/* Quick actions */}
@@ -310,6 +423,13 @@ const SellerDashboard = () => {
                   >
                     <FiShoppingBag className="mr-2 text-primary" />
                     <span>View Orders</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('products')}
+                    className="flex items-center justify-center p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <FiPackage className="mr-2 text-primary" />
+                    <span>Manage Products</span>
                   </button>
                 </div>
               </div>
@@ -372,13 +492,51 @@ const SellerDashboard = () => {
           )}
           
           {activeTab === 'orders' && (
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Orders</h2>
-              <p className="text-gray-600">No orders to display yet.</p>
+            <div>
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">Orders</h2>
+                <p className="text-gray-600">View and manage orders containing your products</p>
+              </div>
+              
+              {/* Orders list */}
+              {sellerLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <>
+                  <SellerOrderList 
+                    orders={orders}
+                    onViewOrder={handleViewOrder}
+                    onUpdateStatus={handleUpdateOrderStatus}
+                    isUpdating={sellerLoading}
+                  />
+                  
+                  {orderPagination.totalPages > 1 && (
+                    <div className="mt-6">
+                      <ProductPagination 
+                        currentPage={orderPagination.pageNumber}
+                        totalPages={orderPagination.totalPages}
+                        onPageChange={handlePageChange}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
         </div>
       </div>
+      
+      {/* Order Details Modal */}
+      {showOrderDetails && currentOrder && (
+        <SellerOrderDetails 
+          order={currentOrder}
+          onClose={() => setShowOrderDetails(false)}
+          onUpdateStatus={handleUpdateOrderStatus}
+          isUpdating={sellerLoading}
+        />
+      )}
     </>
   );
 };
