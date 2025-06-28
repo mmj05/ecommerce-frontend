@@ -84,7 +84,7 @@ const PaymentMethod = ({ selectedMethod, onSelectMethod, onNextStep }) => {
       <div className="mt-6">
         <button
           onClick={handleContinue}
-          className="w-full btn-primary py-3"
+          className="w-full btn btn-primary py-3"
         >
           Continue to Review
         </button>
