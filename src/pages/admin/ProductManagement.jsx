@@ -156,7 +156,7 @@ const ProductManagement = () => {
             {!showForm && (
               <button 
                 onClick={handleAddProduct} 
-                className="btn-primary flex items-center"
+                className="btn btn-primary flex items-center"
               >
                 <FiPlus className="mr-2" /> Add Product
               </button>
