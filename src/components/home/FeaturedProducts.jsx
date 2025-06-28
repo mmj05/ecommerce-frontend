@@ -1,17 +1,10 @@
-import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { fetchAllProducts } from '../../features/products/productSlice';
 import ProductCard from '../products/ProductCard';
 import { FiChevronRight } from 'react-icons/fi';
 
 const FeaturedProducts = () => {
-  const dispatch = useDispatch();
   const { featuredProducts, isLoading, error } = useSelector((state) => state.products);
-
-  useEffect(() => {
-    dispatch(fetchAllProducts({ pageNumber: 0, pageSize: 8, sortBy: 'productId', sortOrder: 'asc' }));
-  }, [dispatch]);
 
   if (isLoading) {
     return (
