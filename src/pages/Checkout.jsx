@@ -371,7 +371,7 @@ const Checkout = () => {
                   <button
                     onClick={handlePlaceOrder}
                     disabled={orderLoading}
-                    className="w-full btn-primary py-3 flex items-center justify-center"
+                    className="w-full btn btn-primary py-3 flex items-center justify-center"
                   >
                     {orderLoading ? "Processing..." : "Place Order"}
                   </button>
