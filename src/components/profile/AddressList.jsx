@@ -186,7 +186,7 @@ const AddressList = ({ addresses = [], isLoading, onMessage }) => {
         {!showForm && (
           <button 
             onClick={() => setShowForm(true)} 
-            className="btn-primary flex items-center text-sm"
+            className="btn btn-primary flex items-center text-sm"
             disabled={isDeleting}
           >
             <FiPlus className="mr-2" /> Add New Address
@@ -337,7 +337,7 @@ const AddressList = ({ addresses = [], isLoading, onMessage }) => {
               </button>
               <button
                 type="submit"
-                className="btn-primary px-4 py-2 flex items-center"
+                className="btn btn-primary px-4 py-2 flex items-center"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
