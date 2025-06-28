@@ -108,7 +108,7 @@ const CategoryForm = ({ category, onSave, onCancel, isSubmitting }) => {
           </button>
           <button
             type="submit"
-            className="btn-primary px-4 py-2 flex items-center"
+            className="btn btn-primary px-4 py-2 flex items-center"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
