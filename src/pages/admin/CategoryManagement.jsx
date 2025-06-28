@@ -143,7 +143,7 @@ const CategoryManagement = () => {
             {!showForm && (
               <button 
                 onClick={handleAddCategory} 
-                className="btn-primary flex items-center"
+                className="btn btn-primary flex items-center"
               >
                 <FiPlus className="mr-2" /> Add Category
               </button>
