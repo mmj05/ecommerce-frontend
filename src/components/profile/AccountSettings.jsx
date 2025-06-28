@@ -110,7 +110,7 @@ const AccountSettings = ({ user, onMessage }) => {
                     <button
                       onClick={handleSaveEmail}
                       disabled={isSubmitting}
-                      className="btn-primary text-sm px-3 py-1"
+                      className="btn btn-primary text-sm px-3 py-1"
                     >
                       {isSubmitting ? (
                         <>
@@ -225,7 +225,7 @@ const AccountSettings = ({ user, onMessage }) => {
             <div className="space-y-4">
               <div>
                 <h4 className="font-medium text-gray-900 mb-2">Two-Factor Authentication</h4>
-                <button className="btn-primary text-sm px-3 py-1">
+                <button className="btn btn-primary text-sm px-3 py-1">
                   Enable 2FA
                 </button>
                 <p className="mt-1 text-sm text-gray-500">
