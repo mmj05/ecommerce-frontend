@@ -159,7 +159,7 @@ const Cart = () => {
               </p>
               <Link
                 to="/products"
-                className="btn-primary inline-flex items-center px-6 py-3"
+                className="btn btn-primary inline-flex items-center px-6 py-3"
               >
                 <FiArrowLeft className="mr-2" /> Continue Shopping
               </Link>
