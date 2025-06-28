@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Helmet } from 'react-helmet';
 import { fetchAllProducts } from '../features/products/productSlice';
 import { fetchAllCategories } from '../features/categories/categorySlice';
@@ -14,12 +14,26 @@ import Newsletter from '../components/home/Newsletter';
 
 const Home = () => {
   const dispatch = useDispatch();
+  const {
+    products: productsList,
+    isLoading: productsLoading
+  } = useSelector((state) => state.products);
+
+  const {
+    categories: categoriesList,
+    isLoading: categoriesLoading
+  } = useSelector((state) => state.categories);
 
   useEffect(() => {
-    // Load initial data needed for the homepage
-    dispatch(fetchAllProducts({ pageNumber: 0, pageSize: 8, sortBy: 'productId', sortOrder: 'asc' }));
-    dispatch(fetchAllCategories({ pageNumber: 0, pageSize: 10, sortBy: 'categoryId', sortOrder: 'asc' }));
-  }, [dispatch]);
+    // Fetch only if the data isn't already in the store (prevents duplicate requests)
+    if (!productsLoading && productsList.length === 0) {
+      dispatch(fetchAllProducts({ pageNumber: 0, pageSize: 8, sortBy: 'productId', sortOrder: 'asc' }));
+    }
+
+    if (!categoriesLoading && categoriesList.length === 0) {
+      dispatch(fetchAllCategories({ pageNumber: 0, pageSize: 10, sortBy: 'categoryId', sortOrder: 'asc' }));
+    }
+  }, [dispatch, productsLoading, categoriesLoading, productsList.length, categoriesList.length]);
 
   return (
     <>
