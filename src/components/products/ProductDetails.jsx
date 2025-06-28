@@ -236,7 +236,7 @@ const ProductDetails = () => {
           <button
             onClick={handleAddToCart}
             disabled={product.quantity === 0 || isAdding}
-            className={`btn-primary flex items-center justify-center gap-2 w-full transition-all ${
+            className={`btn btn-primary flex items-center justify-center gap-2 w-full transition-all ${
               isAdding ? 'opacity-70 cursor-wait' : ''
             } ${isAdded ? 'bg-green-500 border-green-500' : ''} ${
               product.quantity === 0 ? 'opacity-50 cursor-not-allowed' : ''
