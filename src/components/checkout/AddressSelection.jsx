@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { FiPlus, FiMapPin, FiAlertCircle } from 'react-icons/fi';
 import { addAddress } from '../../features/address/addressSlice';
@@ -156,7 +156,7 @@ const AddressSelection = ({ addresses, selectedAddress, onSelectAddress, onNextS
       {!isAddingAddress ? (
         <button
           onClick={() => setIsAddingAddress(true)}
-          className="flex items-center text-primary hover:text-primary-dark mb-6"
+          className="btn btn-primary flex items-center mb-6"
         >
           <FiPlus className="mr-2" /> Add New Address
         </button>
@@ -286,7 +286,7 @@ const AddressSelection = ({ addresses, selectedAddress, onSelectAddress, onNextS
             <div className="mt-4 flex space-x-4">
               <button
                 type="submit"
-                className="btn-primary"
+                className="btn btn-primary"
               >
                 Save Address
               </button>
@@ -315,7 +315,7 @@ const AddressSelection = ({ addresses, selectedAddress, onSelectAddress, onNextS
       <div className="mt-8">
         <button
           onClick={handleContinue}
-          className="w-full btn-primary py-3"
+          className="w-full btn btn-primary py-3"
           disabled={!selectedAddress}
         >
           Continue to Payment
