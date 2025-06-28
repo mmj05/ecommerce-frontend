@@ -128,7 +128,7 @@ const ProductCard = ({ product }) => {
           <button
             onClick={handleAddToCart}
             disabled={isAdding || product.quantity === 0}
-            className={`btn-primary text-xs px-3 py-2 rounded transition-all ${
+            className={`btn btn-primary text-xs px-3 py-2 transition-all ${
               isAdding ? 'opacity-70 cursor-wait' : ''
             } ${isAdded ? 'bg-green-500 border-green-500' : ''} ${
               product.quantity === 0 ? 'opacity-50 cursor-not-allowed' : ''
