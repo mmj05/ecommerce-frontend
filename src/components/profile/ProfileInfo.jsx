@@ -1,26 +1,7 @@
 // src/components/profile/ProfileInfo.jsx
-import { useState } from 'react';
-import { FiUser, FiMail, FiCalendar } from 'react-icons/fi';
+import { FiUser, FiMail } from 'react-icons/fi';
 
-const ProfileInfo = ({ user, onMessage }) => {
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      });
-    } catch (error) {
-      return 'N/A';
-    }
-  };
-
-  const joinDate = user?.createdAt 
-    ? formatDate(user.createdAt) 
-    : 'N/A';
-
+const ProfileInfo = ({ user }) => {
   return (
     <div>
       <h2 className="text-xl font-bold text-gray-900 mb-6">Profile Overview</h2>
@@ -52,14 +33,6 @@ const ProfileInfo = ({ user, onMessage }) => {
               <h4 className="text-sm font-medium text-gray-500">Email</h4>
             </div>
             <p className="text-gray-900 font-medium">{user?.email}</p>
-          </div>
-          
-          <div className="rounded-lg bg-gray-50 p-4">
-            <div className="flex items-center mb-3">
-              <FiCalendar className="text-gray-500 mr-2" />
-              <h4 className="text-sm font-medium text-gray-500">Member Since</h4>
-            </div>
-            <p className="text-gray-900 font-medium">{joinDate}</p>
           </div>
         </div>
         

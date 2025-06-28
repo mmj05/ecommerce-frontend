@@ -87,7 +87,7 @@ const Profile = () => {
   return (
     <>
       <Helmet>
-        <title>My Account | ShopEasy</title>
+        <title>My Account | FlipDot</title>
         <meta name="description" content="Manage your account, orders, and addresses" />
       </Helmet>
 
@@ -158,7 +158,7 @@ const Profile = () => {
             {/* Main Content */}
             <div className="w-full md:w-3/4 bg-white rounded-lg shadow-sm p-6">
               {activeTab === 'profile' && (
-                <ProfileInfo user={user} onMessage={handleMessage} />
+                <ProfileInfo user={user} />
               )}
               
               {activeTab === 'orders' && (

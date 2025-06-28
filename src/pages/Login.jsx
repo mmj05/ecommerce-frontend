@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { login, clearError } from '../features/auth/authSlice';
-import { mergeCart } from '../features/cart/cartSlice';
 import { FiMail, FiLock, FiAlertCircle } from 'react-icons/fi';
 
 const Login = () => {
@@ -19,8 +18,7 @@ const Login = () => {
   const location = useLocation();
   
   const { isAuthenticated, error, isLoading } = useSelector((state) => state.auth);
-  const { cartItems } = useSelector((state) => state.cart);
-  
+
   // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated) {
@@ -95,7 +93,7 @@ const Login = () => {
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-          <p className="text-gray-600">Sign in to your ShopEasy account</p>
+          <p className="text-gray-600">Sign in to your FlipDot account</p>
         </div>
 
         {error && (

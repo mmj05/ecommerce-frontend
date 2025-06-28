@@ -10,7 +10,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-xl font-bold mb-4">ShopEasy</h3>
+            <h3 className="text-xl font-bold mb-4">FlipDot</h3>
             <p className="text-gray-400 mb-4">
               Your one-stop destination for all your shopping needs.
             </p>
@@ -79,7 +79,7 @@ const Footer = () => {
               </li>
               <li className="flex items-center">
                 <FiMail className="text-gray-400 mr-3" />
-                <span className="text-gray-400">support@shopeasy.com</span>
+                <span className="text-gray-400">support@flipdot.com</span>
               </li>
             </ul>
           </div>
@@ -89,7 +89,7 @@ const Footer = () => {
         <div className="border-t border-gray-800 mt-8 pt-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              &copy; {currentYear} ShopEasy. All rights reserved.
+              &copy; {currentYear} FlipDot. All rights reserved.
             </p>
             <div className="mt-4 md:mt-0">
               <ul className="flex space-x-6">

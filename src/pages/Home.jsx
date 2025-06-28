@@ -38,8 +38,8 @@ const Home = () => {
   return (
     <>
       <Helmet>
-        <title>ShopEasy - Shop With Ease</title>
-        <meta name="description" content="Shop the best products at unbeatable prices. ShopEasy is your one-stop destination for all your shopping needs." />
+        <title>FlipDot - Shop With Ease</title>
+        <meta name="description" content="Shop the best products at unbeatable prices. FlipDot is your one-stop destination for all your shopping needs." />
       </Helmet>
 
       <div className="min-h-screen">

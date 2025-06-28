@@ -9,7 +9,7 @@ const Categories = () => {
   const dispatch = useDispatch();
   const [searchTerm, setSearchTerm] = useState('');
   
-  const { categories, isLoading, error, pagination } = useSelector((state) => state.categories);
+  const { categories, isLoading, error } = useSelector((state) => state.categories);
   
   // Load categories on component mount
   useEffect(() => {
@@ -38,8 +38,8 @@ const Categories = () => {
   return (
     <>
       <Helmet>
-        <title>Shop by Categories | ShopEasy</title>
-        <meta name="description" content="Browse our product categories to find exactly what you're looking for at ShopEasy." />
+        <title>Shop by Categories | FlipDot</title>
+        <meta name="description" content="Browse our product categories to find exactly what you're looking for at FlipDot." />
       </Helmet>
       
       <div className="bg-gray-50 py-8">

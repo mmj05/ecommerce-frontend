@@ -241,7 +241,7 @@ const AccountSettings = ({ user, onMessage }) => {
                     className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                     defaultChecked
                   />
-                  <span className="ml-2 text-gray-700">Allow ShopEasy to use my purchase history for personalized recommendations</span>
+                  <span className="ml-2 text-gray-700">Allow FlipDot to use my purchase history for personalized recommendations</span>
                 </label>
               </div>
             </div>

@@ -129,7 +129,7 @@ const Cart = () => {
   return (
     <>
       <Helmet>
-        <title>Your Shopping Cart | ShopEasy</title>
+        <title>Your Shopping Cart | FlipDot</title>
         <meta
           name="description"
           content="Review and manage items in your shopping cart"

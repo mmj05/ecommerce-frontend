@@ -102,7 +102,7 @@ const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <span className="text-2xl font-bold text-primary">ShopEasy</span>
+            <span className="text-2xl font-bold text-primary">FlipDot</span>
           </Link>
 
           {/* Search Bar - Desktop */}

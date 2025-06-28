@@ -99,24 +99,24 @@ const Products = () => {
   // Calculate page title based on filters
   const getPageTitle = () => {
     if (searchQuery) {
-      return `Search Results for "${searchQuery}" | ShopEasy`;
+      return `Search Results for "${searchQuery}" | FlipDot`;
     }
     
     if (categoryId && categories.length > 0) {
       const category = categories.find(cat => cat.categoryId.toString() === categoryId);
       if (category) {
-        return `${category.categoryName} | ShopEasy`;
+        return `${category.categoryName} | FlipDot`;
       }
     }
     
-    return 'All Products | ShopEasy';
+    return 'All Products | FlipDot';
   };
 
   return (
     <>
       <Helmet>
         <title>{getPageTitle()}</title>
-        <meta name="description" content="Browse our wide selection of products at ShopEasy - your one-stop shop for all your needs." />
+        <meta name="description" content="Browse our wide selection of products at FlipDot - your one-stop shop for all your needs." />
       </Helmet>
 
       <div className="bg-gray-50 min-h-screen py-8">

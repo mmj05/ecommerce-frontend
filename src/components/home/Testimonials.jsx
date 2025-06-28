@@ -6,7 +6,7 @@ const Testimonials = () => {
       id: 1,
       name: 'Sarah Johnson',
       role: 'Regular Customer',
-      content: 'I\'ve been shopping with ShopEasy for over a year now, and I\'m always impressed with their product quality and customer service. The delivery is always on time!',
+      content: 'I\'ve been shopping with FlipDot for over a year now, and I\'m always impressed with their product quality and customer service. The delivery is always on time!',
       rating: 5,
       image: 'https://randomuser.me/api/portraits/women/44.jpg'
     },
@@ -14,7 +14,7 @@ const Testimonials = () => {
       id: 2,
       name: 'Mike Thompson',
       role: 'New Customer',
-      content: 'My first experience with ShopEasy was fantastic! The website is so easy to navigate, and I found exactly what I was looking for. Will definitely shop here again.',
+      content: 'My first experience with FlipDot was fantastic! The website is so easy to navigate, and I found exactly what I was looking for. Will definitely shop here again.',
       rating: 5,
       image: 'https://randomuser.me/api/portraits/men/32.jpg'
     },
@@ -43,7 +43,7 @@ const Testimonials = () => {
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">What Our Customers Say</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Don't just take our word for it, hear what our satisfied customers have to say about ShopEasy.
+            Don't just take our word for it, hear what our satisfied customers have to say about FlipDot.
           </p>
         </div>
 

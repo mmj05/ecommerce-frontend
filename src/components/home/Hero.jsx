@@ -10,7 +10,7 @@ const Hero = () => {
               Shop With Ease, Anytime, Anywhere
             </h1>
             <p className="text-lg md:text-xl opacity-90 mb-8">
-              Discover the best products at unbeatable prices. Shop smart, shop with ShopEasy.
+              Discover the best products at unbeatable prices. Shop smart, shop with FlipDot.
             </p>
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 z-10 relative">
               <Link

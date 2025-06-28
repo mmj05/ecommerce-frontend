@@ -5,7 +5,7 @@ const ProductDetails = () => {
   return (
     <>
       <Helmet>
-        <title>Product Details - ShopEasy</title>
+        <title>Product Details - FlipDot</title>
         <meta name="description" content="Detailed product information and specifications" />
       </Helmet>
 

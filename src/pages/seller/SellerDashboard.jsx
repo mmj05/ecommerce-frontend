@@ -272,7 +272,7 @@ const SellerDashboard = () => {
   return (
     <>
       <Helmet>
-        <title>Seller Dashboard | ShopEasy</title>
+        <title>Seller Dashboard | FlipDot</title>
       </Helmet>
       
       <div className="bg-gray-50 py-8">

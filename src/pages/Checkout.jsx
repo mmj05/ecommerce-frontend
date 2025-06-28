@@ -216,7 +216,7 @@ const Checkout = () => {
   return (
     <>
       <Helmet>
-        <title>Checkout | ShopEasy</title>
+        <title>Checkout | FlipDot</title>
         <meta
           name="description"
           content="Complete your purchase and place your order"
