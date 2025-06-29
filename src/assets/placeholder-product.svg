@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="300" height="300" fill="#F3F4F6"/>
+  <!-- Box Icon -->
+  <path d="M150 120L190 140V180L150 200L110 180V140L150 120Z" stroke="#9CA3AF" stroke-width="4" fill="none"/>
+  <path d="M150 120V160M190 140L150 160L110 140" stroke="#9CA3AF" stroke-width="4"/>
+  <!-- Text -->
+  <text x="150" y="240" font-family="system-ui, -apple-system" font-size="14" fill="#6B7280" text-anchor="middle">No Image Available</text>
+</svg> 
