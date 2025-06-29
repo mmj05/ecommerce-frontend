@@ -4,6 +4,10 @@ import { FiX } from 'react-icons/fi';
 const ProductsFilter = ({ categories, onFilterChange, currentCategory }) => {
   const [selectedCategory, setSelectedCategory] = useState(currentCategory || '');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
+  const [availability, setAvailability] = useState({
+    inStock: false,
+    onSale: false
+  });
 
   useEffect(() => {
     // Update selected category when currentCategory prop changes
@@ -17,7 +21,8 @@ const ProductsFilter = ({ categories, onFilterChange, currentCategory }) => {
     
     onFilterChange({
       category: newCategory,
-      ...priceRange.min || priceRange.max ? { price: priceRange } : {}
+      price: priceRange.min || priceRange.max ? priceRange : null,
+      availability: availability.inStock || availability.onSale ? availability : null
     });
   };
 
@@ -29,16 +34,29 @@ const ProductsFilter = ({ categories, onFilterChange, currentCategory }) => {
     }
   };
 
+  const handleAvailabilityChange = (type) => {
+    const newAvailability = { ...availability, [type]: !availability[type] };
+    setAvailability(newAvailability);
+    
+    onFilterChange({
+      category: selectedCategory,
+      price: priceRange.min || priceRange.max ? priceRange : null,
+      availability: newAvailability.inStock || newAvailability.onSale ? newAvailability : null
+    });
+  };
+
   const applyPriceFilter = () => {
     onFilterChange({
       category: selectedCategory,
-      price: priceRange
+      price: priceRange.min || priceRange.max ? priceRange : null,
+      availability: availability.inStock || availability.onSale ? availability : null
     });
   };
 
   const resetFilters = () => {
     setSelectedCategory('');
     setPriceRange({ min: '', max: '' });
+    setAvailability({ inStock: false, onSale: false });
     onFilterChange({});
   };
 
@@ -46,7 +64,7 @@ const ProductsFilter = ({ categories, onFilterChange, currentCategory }) => {
     <div className="bg-white rounded-lg shadow-sm p-4 sticky top-20">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
-        {(selectedCategory || priceRange.min || priceRange.max) && (
+        {(selectedCategory || priceRange.min || priceRange.max || availability.inStock || availability.onSale) && (
           <button
             onClick={resetFilters}
             className="text-sm text-primary hover:text-primary-dark flex items-center"
@@ -134,6 +152,8 @@ const ProductsFilter = ({ categories, onFilterChange, currentCategory }) => {
             <input
               type="checkbox"
               id="in-stock"
+              checked={availability.inStock}
+              onChange={() => handleAvailabilityChange('inStock')}
               className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
             />
             <label
@@ -147,6 +167,8 @@ const ProductsFilter = ({ categories, onFilterChange, currentCategory }) => {
             <input
               type="checkbox"
               id="on-sale"
+              checked={availability.onSale}
+              onChange={() => handleAvailabilityChange('onSale')}
               className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
             />
             <label
