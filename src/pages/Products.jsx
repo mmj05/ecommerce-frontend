@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
@@ -21,6 +21,10 @@ const Products = () => {
   const dispatch = useDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({
+    price: null,
+    availability: null
+  });
   
   // Get query parameters
   const categoryId = searchParams.get('category');
@@ -31,6 +35,32 @@ const Products = () => {
   
   const { products, isLoading, error, pagination } = useSelector((state) => state.products);
   const { categories } = useSelector((state) => state.categories);
+
+  // Apply client-side filters to products
+  const filteredProducts = useMemo(() => {
+    if (!products) return [];
+    
+    return products.filter(product => {
+      // Price Range Filter
+      if (activeFilters.price) {
+        const { min, max } = activeFilters.price;
+        const price = product.specialPrice || product.price;
+        
+        if (min && price < parseFloat(min)) return false;
+        if (max && price > parseFloat(max)) return false;
+      }
+      
+      // Availability Filters
+      if (activeFilters.availability) {
+        const { inStock, onSale } = activeFilters.availability;
+        
+        if (inStock && product.quantity <= 0) return false;
+        if (onSale && product.discount <= 0) return false;
+      }
+      
+      return true;
+    });
+  }, [products, activeFilters]);
 
   useEffect(() => {
     // Load all categories on component mount (used for filters)
@@ -75,12 +105,18 @@ const Products = () => {
   };
   
   const handleFilterChange = (filters) => {
-    // Apply category filter
+    // Apply category filter to URL
     if (filters.category) {
       searchParams.set('category', filters.category);
     } else {
       searchParams.delete('category');
     }
+    
+    // Update active filters state for client-side filtering
+    setActiveFilters({
+      price: filters.price,
+      availability: filters.availability
+    });
     
     // Reset to first page and update URL
     searchParams.set('page', '0');
@@ -123,7 +159,7 @@ const Products = () => {
         <div className="container-custom">
           <ProductsHeader 
             title={searchQuery ? `Search results for "${searchQuery}"` : 'Our Products'} 
-            count={pagination?.totalElements || 0}
+            count={filteredProducts.length || 0}
           />
           
           <div className="flex flex-col md:flex-row gap-6 mt-6">
@@ -164,9 +200,9 @@ const Products = () => {
                   <strong className="font-bold">Error! </strong>
                   <span className="block sm:inline">{error}</span>
                 </div>
-              ) : products && products.length > 0 ? (
+              ) : filteredProducts && filteredProducts.length > 0 ? (
                 <>
-                  <ProductsList products={products} />
+                  <ProductsList products={filteredProducts} />
                   
                   <div className="mt-8">
                     <ProductsPagination 
