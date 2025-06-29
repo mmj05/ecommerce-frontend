@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { FiShoppingCart, FiMinus, FiPlus, FiCheck, FiArrowLeft } from 'react-icons/fi';
 import { addToCart, getCart } from '../../features/cart/cartSlice';
 import { fetchProductDetails } from '../../features/products/productSlice';
+import { getProductImageUrl } from '../../utils/imageUtils';
 
 const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
@@ -15,7 +16,6 @@ const ProductDetails = () => {
 
   const { product, isLoading, error } = useSelector((state) => state.products);
   const { cartItems, cartUpdated } = useSelector((state) => state.cart);
-  const { isAuthenticated } = useSelector((state) => state.auth);
   
   // Check if product is already in cart - always convert to string for reliable comparison
   const isInCart = product && cartItems.some(item => String(item.productId) === String(product.productId));
@@ -142,7 +142,7 @@ const ProductDetails = () => {
         <div>
           <div className="bg-gray-100 rounded-lg p-8 flex items-center justify-center">
             <img 
-              src={product.image || "https://via.placeholder.com/500"} 
+              src={getProductImageUrl(product.image)} 
               alt={product.productName} 
               className="max-w-full h-auto object-contain rounded-lg"
             />
