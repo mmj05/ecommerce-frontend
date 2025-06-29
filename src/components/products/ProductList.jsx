@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { FiEdit, FiTrash2, FiPackage, FiDollarSign } from 'react-icons/fi';
 import productService from '../../services/productService';
+import { getProductImageUrl } from '../../utils/imageUtils';
 
 const ProductList = ({ products, onEditProduct, onDeleteProduct, showPermissions = true }) => {
   const { user } = useSelector((state) => state.auth);
@@ -110,7 +111,7 @@ const ProductList = ({ products, onEditProduct, onDeleteProduct, showPermissions
                         <div className="flex-shrink-0 h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
                           {product.image && product.image !== 'default.png' ? (
                             <img 
-                              src={product.image} 
+                              src={getProductImageUrl(product.image)} 
                               alt={product.productName}
                               className="h-full w-full object-cover"
                             />
