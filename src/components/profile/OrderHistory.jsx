@@ -3,35 +3,40 @@ import { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { FiShoppingBag, FiChevronDown, FiChevronUp, FiPackage, FiClock, FiDollarSign, FiCalendar, FiSearch } from 'react-icons/fi';
 import { getOrderById } from '../../features/orders/orderSlice';
+import { getProductImageUrl } from '../../utils/imageUtils';
 
 const OrderHistory = ({ orders = [], isLoading, onMessage }) => {
-  const [expandedOrder, setExpandedOrder] = useState(null);
-  const [activeOrder, setActiveOrder] = useState(null);
+  const [activeOrderId, setActiveOrderId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [activeOrder, setActiveOrder] = useState(null);
   const dispatch = useDispatch();
 
   // Load orders if needed
   useEffect(() => {
-    if (expandedOrder && !activeOrder) {
-      dispatch(getOrderById(expandedOrder))
+    if (activeOrderId && !activeOrder) {
+      dispatch(getOrderById(activeOrderId))
         .unwrap()
         .then(order => {
           setActiveOrder(order);
         })
-        .catch(error => {
-          onMessage('error', 'Failed to load order details: ' + error);
+        .catch(err => {
+          onMessage?.({
+            type: 'error',
+            content: 'Failed to load order details. Please try again.'
+          });
+          setActiveOrderId(null);
         });
     }
-  }, [dispatch, expandedOrder, activeOrder, onMessage]);
+  }, [dispatch, activeOrderId, activeOrder, onMessage]);
 
   // Handler for expanding/collapsing order details
   const toggleOrderDetails = (orderId) => {
-    if (expandedOrder === orderId) {
-      setExpandedOrder(null);
+    if (activeOrderId === orderId) {
+      setActiveOrderId(null);
       setActiveOrder(null);
     } else {
-      setExpandedOrder(orderId);
-      setActiveOrder(null);
+      setActiveOrderId(orderId);
     }
   };
 
@@ -157,19 +162,19 @@ const OrderHistory = ({ orders = [], isLoading, onMessage }) => {
                   
                   <button 
                     className="text-gray-500 hover:text-primary focus:outline-none"
-                    aria-label={expandedOrder === order.orderId ? 'Collapse order details' : 'Expand order details'}
+                    aria-label={activeOrderId === order.orderId ? 'Collapse order details' : 'Expand order details'}
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleOrderDetails(order.orderId);
                     }}
                   >
-                    {expandedOrder === order.orderId ? <FiChevronUp /> : <FiChevronDown />}
+                    {activeOrderId === order.orderId ? <FiChevronUp /> : <FiChevronDown />}
                   </button>
                 </div>
               </div>
               
               {/* Order details */}
-              {expandedOrder === order.orderId && (
+              {activeOrderId === order.orderId && (
                 <div className="p-4 border-t border-gray-200 bg-white">
                   {!activeOrder ? (
                     <div className="flex justify-center items-center py-4">
@@ -274,7 +279,7 @@ const OrderHistory = ({ orders = [], isLoading, onMessage }) => {
                                           {item.productDTO?.image ? (
                                             <img 
                                               className="h-10 w-10 object-cover"
-                                              src={item.productDTO.image}
+                                              src={getProductImageUrl(item.productDTO.image)}
                                               alt={item.productDTO.productName}
                                             />
                                           ) : (
