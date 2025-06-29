@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { FiShoppingCart, FiEye, FiCheck } from 'react-icons/fi';
 import { addToCart, updateCartItem } from '../../features/cart/cartSlice';
+import { getProductImageUrl } from '../../utils/imageUtils';
 
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
@@ -53,29 +54,29 @@ const ProductCard = ({ product }) => {
     : 0;
 
   return (
-    <div className="group card overflow-hidden transition-all duration-300 hover:shadow-lg">
+    <div className="group card overflow-hidden transition-all duration-300 hover:shadow-lg bg-white rounded-lg">
       {/* Product Image */}
       <div className="relative">
         <Link to={`/products/${product.productId}`}>
           <img
-            src={product.image || "https://via.placeholder.com/300"}
+            src={getProductImageUrl(product.image)}
             alt={product.productName}
-            className="w-full h-56 object-cover object-center group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-64 object-cover object-center group-hover:scale-105 transition-transform duration-300"
           />
         </Link>
 
         {/* Discount Badge */}
         {discountPercentage > 0 && (
-          <div className="absolute top-2 left-2 bg-accent text-white text-xs font-bold px-2 py-1 rounded">
+          <div className="absolute top-4 left-4 bg-accent text-white text-sm font-bold px-3 py-1.5 rounded-full">
             {discountPercentage}% OFF
           </div>
         )}
 
         {/* Quick Actions Overlay */}
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={handleAddToCart}
-            className={`btn bg-white text-primary hover:bg-primary hover:text-white p-2 rounded-full transition-colors duration-200 ${
+            className={`btn bg-white text-primary hover:bg-primary hover:text-white p-3 rounded-full transition-colors duration-200 ${
               isAdding ? 'opacity-70 cursor-wait' : ''
             } ${isAdded ? 'bg-green-500 text-white' : ''} ${
               product.quantity === 0 ? 'opacity-50 cursor-not-allowed' : ''
@@ -83,52 +84,62 @@ const ProductCard = ({ product }) => {
             aria-label="Add to cart"
             disabled={isAdding || product.quantity === 0}
           >
-            {isAdded ? <FiCheck size={18} /> : <FiShoppingCart size={18} />}
+            {isAdded ? <FiCheck size={20} /> : <FiShoppingCart size={20} />}
           </button>
           <Link
             to={`/products/${product.productId}`}
-            className="btn bg-white text-primary hover:bg-primary hover:text-white p-2 rounded-full transition-colors duration-200"
+            className="btn bg-white text-primary hover:bg-primary hover:text-white p-3 rounded-full transition-colors duration-200"
             aria-label="View product"
           >
-            <FiEye size={18} />
+            <FiEye size={20} />
           </Link>
         </div>
       </div>
 
       {/* Product Info */}
-      <div className="p-4">
-        <Link to={`/products/${product.productId}`} className="block">
-          <h3 className="text-gray-800 font-semibold text-lg mb-1 truncate group-hover:text-primary">
+      <div className="p-6">
+        <Link to={`/products/${product.productId}`} className="block mb-4">
+          <h3 className="text-gray-800 font-semibold text-lg mb-3 truncate group-hover:text-primary">
             {product.productName}
           </h3>
+          <p className="text-gray-600 text-sm mb-4 line-clamp-2 min-h-[2.5rem]">
+            {product.description}
+          </p>
         </Link>
 
-        <p className="text-gray-600 text-sm mb-2 line-clamp-2">
-          {product.description}
-        </p>
-
-        <div className="flex items-center justify-between mt-3">
-          <div className="flex items-center">
-            {product.discount > 0 ? (
-              <>
-                <span className="text-lg font-bold text-primary mr-2">
-                  ${product.specialPrice.toFixed(2)}
-                </span>
-                <span className="text-sm text-gray-500 line-through">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-1">
+              {product.discount > 0 ? (
+                <>
+                  <span className="text-xl font-bold text-primary">
+                    ${product.specialPrice.toFixed(2)}
+                  </span>
+                  <span className="text-sm text-gray-500 line-through">
+                    ${product.price.toFixed(2)}
+                  </span>
+                </>
+              ) : (
+                <span className="text-xl font-bold text-primary">
                   ${product.price.toFixed(2)}
                 </span>
-              </>
-            ) : (
-              <span className="text-lg font-bold text-primary">
-                ${product.price.toFixed(2)}
+              )}
+            </div>
+
+            {/* Stock Status */}
+            <div>
+              <span className={`text-sm font-medium ${
+                product.quantity > 0 ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {product.quantity > 0 ? 'In Stock' : 'Out of Stock'}
               </span>
-            )}
+            </div>
           </div>
 
           <button
             onClick={handleAddToCart}
             disabled={isAdding || product.quantity === 0}
-            className={`btn btn-primary text-xs px-3 py-2 transition-all ${
+            className={`w-full btn btn-primary py-3 text-sm font-medium transition-all ${
               isAdding ? 'opacity-70 cursor-wait' : ''
             } ${isAdded ? 'bg-green-500 border-green-500' : ''} ${
               product.quantity === 0 ? 'opacity-50 cursor-not-allowed' : ''
@@ -136,15 +147,6 @@ const ProductCard = ({ product }) => {
           >
             {isAdded ? 'Added' : product.quantity === 0 ? 'Out of Stock' : isInCart ? 'Add More' : 'Add to Cart'}
           </button>
-        </div>
-
-        {/* Stock Status */}
-        <div className="mt-2">
-          <span className={`text-xs font-medium ${
-            product.quantity > 0 ? 'text-green-600' : 'text-red-600'
-          }`}>
-            {product.quantity > 0 ? 'In Stock' : 'Out of Stock'}
-          </span>
         </div>
       </div>
     </div>
