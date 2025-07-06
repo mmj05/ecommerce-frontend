@@ -1,7 +1,7 @@
 // src/pages/Profile.jsx
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { 
   FiUser, 
@@ -25,7 +25,17 @@ import { getUserOrders } from '../features/orders/orderSlice';
 import { getAddresses } from '../features/address/addressSlice';
 
 const Profile = () => {
-  const [activeTab, setActiveTab] = useState('profile');
+  const location = useLocation();
+  
+  // Set initial active tab based on current route
+  const getInitialTab = () => {
+    if (location.pathname === '/orders') {
+      return 'orders';
+    }
+    return 'profile';
+  };
+  
+  const [activeTab, setActiveTab] = useState(getInitialTab());
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   
