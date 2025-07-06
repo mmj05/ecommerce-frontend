@@ -105,7 +105,7 @@ const OrderHistory = ({ orders = [], isLoading, onMessage }) => {
           <p className="text-gray-600 mb-4">When you place orders, they will appear here.</p>
           <button 
             onClick={() => window.location.href = '/products'}
-            className="btn-primary"
+            className="btn btn-primary"
           >
             Start Shopping
           </button>
