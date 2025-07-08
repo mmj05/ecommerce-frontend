@@ -3,7 +3,7 @@ import { FiArrowRight, FiStar, FiTruck, FiHeart } from 'react-icons/fi';
 
 const Hero = () => {
   return (
-    <section className="relative bg-blue-800 h-[60vh]">
+    <section className="relative bg-blue-800 min-h-[60vh] lg:h-[60vh]">
       {/* Decorative blurred circles */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-16 -left-16 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
@@ -11,7 +11,7 @@ const Hero = () => {
       </div>
 
       <div className="container-custom relative">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center h-[50vh] py-8 lg:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center min-h-[60vh] lg:h-[50vh] py-8 lg:py-12">
           
           {/* Left Content */}
           <div className="space-y-6 lg:space-y-8 text-center lg:text-left">
@@ -50,7 +50,7 @@ const Hero = () => {
           </div>
 
           {/* Social Proof Area */}
-          <div className="relative flex items-center justify-center h-full">
+          <div className="relative flex items-center justify-center py-8">
             {/* Background decorative elements */}
             <div className="absolute inset-0 pointer-events-none">
               <div className="w-56 h-56 bg-white/5 rounded-full absolute -top-8 -left-8 blur-2xl"></div>
@@ -58,11 +58,11 @@ const Hero = () => {
             </div>
             
             {/* Social Proof Content */}
-            <div className="relative z-10 bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
-              <div className="flex flex-col items-center space-y-6">
+            <div className="relative z-10 bg-white/10 backdrop-blur-sm rounded-2xl p-6 lg:p-8 border border-white/20 shadow-xl w-full max-w-sm">
+              <div className="flex flex-col items-center space-y-4 lg:space-y-6">
                 <h3 className="text-white font-semibold text-lg text-center">Why Choose Us?</h3>
                 
-                <div className="space-y-4">
+                <div className="space-y-3 lg:space-y-4">
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center space-x-1">
                       {[...Array(5)].map((_, i) => (
