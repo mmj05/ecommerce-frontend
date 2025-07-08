@@ -97,7 +97,7 @@ const ProductManagement = () => {
         // Handle image upload if needed
         if (images && images.length > 0) {
           // In a real app, you would upload the images here
-          console.log('Uploading images for existing product:', images);
+          // console.log('Uploading images for existing product:', images);
         }
         
         setSuccess('Product updated successfully');
@@ -108,7 +108,7 @@ const ProductManagement = () => {
         // Handle image upload if needed
         if (images && images.length > 0 && result.productId) {
           // In a real app, you would upload the images here
-          console.log('Uploading images for new product:', images);
+          // console.log('Uploading images for new product:', images);
         }
         
         setSuccess('Product added successfully');

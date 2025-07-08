@@ -75,7 +75,7 @@ function App() {
             guestCartData && JSON.parse(guestCartData).cartItems?.length > 0;
 
           if (hasGuestCartItems) {
-            console.log("Guest cart detected for authenticated user, attempting merge");
+            // console.log("Guest cart detected for authenticated user, attempting merge");
             await dispatch(mergeCart()).unwrap();
           } else {
             // Just get the user's cart

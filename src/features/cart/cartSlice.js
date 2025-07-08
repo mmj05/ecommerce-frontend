@@ -36,12 +36,12 @@ export const getCart = createAsyncThunk(
       if (auth.isAuthenticated) {
         try {
           const response = await cartService.getCart();
-          console.log('GetCart response:', response);
+          // console.log('GetCart response:', response);
           return response;
         } catch (error) {
           // If the API call fails for an authenticated user, return empty cart
           if (error.response && (error.response.status === 404 || error.response.status === 400)) {
-            console.log('No cart found for authenticated user, returning empty cart');
+            // console.log('No cart found for authenticated user, returning empty cart');
             return { 
               products: [],
               totalPrice: 0 
@@ -68,7 +68,7 @@ export const addToCart = createAsyncThunk(
   'cart/addToCart',
   async ({ productId, quantity }, { rejectWithValue, getState }) => {
     try {
-      console.log(`Adding product ID ${productId} with quantity ${quantity} to cart`);
+      // console.log(`Adding product ID ${productId} with quantity ${quantity} to cart`);
       
       const { auth } = getState();
       if (auth.isAuthenticated) {
@@ -157,7 +157,7 @@ export const mergeCart = createAsyncThunk(
         return await dispatch(getCart()).unwrap();
       }
       
-      console.log('Merging guest cart with user cart');
+              // console.log('Merging guest cart with user cart');
       
       // First get the current user's cart to compare with guest cart
       let userCart;
@@ -184,16 +184,16 @@ export const mergeCart = createAsyncThunk(
           
           // If product exists in both carts, only update if guest quantity is higher
           if (userItem && userItem.quantity >= item.quantity) {
-            console.log(`Product ${productId} already in user cart with sufficient quantity (${userItem.quantity})`);
+            // console.log(`Product ${productId} already in user cart with sufficient quantity (${userItem.quantity})`);
             continue;
           } else if (userItem) {
             // User has this product but with less quantity - update with the difference
             const quantityDiff = item.quantity - userItem.quantity;
-            console.log(`Product ${productId} in user cart but with less quantity. Adding ${quantityDiff} more.`);
+            // console.log(`Product ${productId} in user cart but with less quantity. Adding ${quantityDiff} more.`);
             await cartService.addToCart(item.productId, quantityDiff);
           } else {
             // Product not in user cart - add it
-            console.log(`Adding new product ${productId} with quantity ${item.quantity} to user cart`);
+            // console.log(`Adding new product ${productId} with quantity ${item.quantity} to user cart`);
             await cartService.addToCart(item.productId, item.quantity);
           }
         } catch (error) {
@@ -232,9 +232,9 @@ export const removeFromCart = createAsyncThunk(
         // If it was the last item, delete the empty cart
         if (isLastItem) {
           try {
-            console.log('Last item removed, deleting empty cart');
+            // console.log('Last item removed, deleting empty cart');
             await cartService.deleteEmptyCart();
-            console.log('Empty cart deleted successfully after removing last item');
+                          // console.log('Empty cart deleted successfully after removing last item');
           } catch (error) {
             console.warn('Failed to delete empty cart after removing last item:', error);
           }

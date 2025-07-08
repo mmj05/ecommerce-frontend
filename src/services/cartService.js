@@ -10,7 +10,7 @@ const cartService = {
       
       // If last fetch was less than 300ms ago, use cached data instead
       if (now - lastFetchTime < 300) {
-        console.log('Using cached cart data');
+        // console.log('Using cached cart data');
         const cachedCart = localStorage.getItem('cachedCartData');
         if (cachedCart) {
           return JSON.parse(cachedCart);
@@ -21,7 +21,7 @@ const cartService = {
       localStorage.setItem('lastCartFetchTime', now.toString());
       
       const response = await api.get('/carts/users/cart');
-      console.log('Cart data from server:', response.data);
+      // console.log('Cart data from server:', response.data);
       
       // Cache the successful response
       localStorage.setItem('cachedCartData', JSON.stringify(response.data));
@@ -30,7 +30,7 @@ const cartService = {
     } catch (error) {
       // Handle 404 (cart not found) or other common errors
       if (error.response && (error.response.status === 404 || error.response.status === 400)) {
-        console.log('No cart found in backend, returning empty cart');
+        // console.log('No cart found in backend, returning empty cart');
         // Return an empty cart rather than throwing an error
         const emptyCart = {
           products: [],
@@ -49,10 +49,10 @@ const cartService = {
   // Add product to cart
   addToCart: async (productId, quantity) => {
     try {
-      console.log(`Adding product ID ${productId} with quantity ${quantity} to cart via API`);
+      // console.log(`Adding product ID ${productId} with quantity ${quantity} to cart via API`);
       
       const response = await api.post(`/carts/products/${productId}/quantity/${quantity}`);
-      console.log('Response from adding to cart:', response.data);
+      // console.log('Response from adding to cart:', response.data);
       
       // Update cache with the new cart data
       localStorage.setItem('cachedCartData', JSON.stringify(response.data));
@@ -112,7 +112,7 @@ const cartService = {
       // Special handling for common errors
       if (error.response && error.response.status === 404) {
         // Cart not found is not really an error for our purpose
-        console.log('No cart found to delete, this is expected');
+        // console.log('No cart found to delete, this is expected');
         
         // Ensure cache is cleared
         localStorage.removeItem('cachedCartData');

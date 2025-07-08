@@ -39,7 +39,7 @@ const ProductDetails = () => {
   // Update cart item detection when cartUpdated changes
   useEffect(() => {
     // This will refresh the detection of items in cart whenever the cart is updated
-    console.log('Cart updated, refreshing cart items detection');
+          // console.log('Cart updated, refreshing cart items detection');
   }, [cartUpdated]);
 
   const handleQuantityChange = (action) => {
@@ -56,16 +56,16 @@ const ProductDetails = () => {
     setIsAdding(true);
     
     // Log detailed debugging information
-    console.log('Adding to cart:', {
-      productId: product.productId,
-      quantity: quantity,
-      isInCart: isInCart,
-      currentCartItems: cartItems.map(item => ({
-        id: item.productId,
-        name: item.productName,
-        qty: item.quantity
-      }))
-    });
+    // console.log('Adding to cart:', {
+    //   productId: product.productId,
+    //   quantity: quantity,
+    //   isInCart: isInCart,
+    //   currentCartItems: cartItems.map(item => ({
+    //     id: item.productId,
+    //     name: item.productName,
+    //     qty: item.quantity
+    //   }))
+    // });
     
     try {
       // Add to cart and wait for completion

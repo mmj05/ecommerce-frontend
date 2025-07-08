@@ -159,7 +159,7 @@ const Checkout = () => {
       pgResponseMessage: orderNote || "Order placed",
     };
   
-    console.log('Submitting order with data:', orderData);
+    // console.log('Submitting order with data:', orderData);
   
     try {
       // Reset error state
@@ -167,7 +167,7 @@ const Checkout = () => {
       
       // Place the order
       const result = await dispatch(createOrder(orderData)).unwrap();
-      console.log('Order creation successful:', result);
+              // console.log('Order creation successful:', result);
       
       // Store the order for success page
       if (result) {

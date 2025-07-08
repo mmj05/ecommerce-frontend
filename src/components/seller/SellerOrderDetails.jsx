@@ -6,36 +6,36 @@ const SellerOrderDetails = ({ order, onClose, onUpdateStatus, isUpdating }) => {
   // Debug log to see the structure of order items
   React.useEffect(() => {
     if (order) {
-      console.log('=== SELLER ORDER DETAILS DEBUG ===');
-      console.log('Full Order Object:', order);
-      if (order.orderItemDTOs && order.orderItemDTOs.length > 0) {
-        console.log('Order Items Count:', order.orderItemDTOs.length);
-        order.orderItemDTOs.forEach((item, index) => {
-          console.log(`Item ${index + 1}:`, {
-            orderItemId: item.orderItemId,
-            quantity: item.quantity,
-            price: item.orderedProductPrice,
-            productDTO: item.productDTO,
-            product: item.product,
-            productName: item.productDTO?.productName || item.product?.productName || 'NOT FOUND'
-          });
-        });
-      } else {
-        console.log('No order items found');
-      }
-      console.log('=== PAYMENT INFO DEBUG ===');
-      console.log('Payment DTO exists:', !!order.paymentDTO);
-      console.log('Payment Info:', order.paymentDTO);
-      if (order.paymentDTO) {
-        console.log('Payment fields:', Object.keys(order.paymentDTO));
-      }
-      console.log('=== ADDRESS INFO DEBUG ===');
-      console.log('Address DTO exists:', !!order.addressDTO);
-      console.log('Address Info:', order.addressDTO);
-      if (order.addressDTO) {
-        console.log('Address fields:', Object.keys(order.addressDTO));
-      }
-      console.log('=== END DEBUG ===');
+      // console.log('=== SELLER ORDER DETAILS DEBUG ===');
+      // console.log('Full Order Object:', order);
+      // if (order.orderItemDTOs && order.orderItemDTOs.length > 0) {
+      //   console.log('Order Items Count:', order.orderItemDTOs.length);
+      //   order.orderItemDTOs.forEach((item, index) => {
+      //     console.log(`Item ${index + 1}:`, {
+      //       orderItemId: item.orderItemId,
+      //       quantity: item.quantity,
+      //       price: item.orderedProductPrice,
+      //       productDTO: item.productDTO,
+      //       product: item.product,
+      //       productName: item.productDTO?.productName || item.product?.productName || 'NOT FOUND'
+      //     });
+      //   });
+      // } else {
+      //   console.log('No order items found');
+      // }
+      // console.log('=== PAYMENT INFO DEBUG ===');
+      // console.log('Payment DTO exists:', !!order.paymentDTO);
+      // console.log('Payment Info:', order.paymentDTO);
+      // if (order.paymentDTO) {
+      //   console.log('Payment fields:', Object.keys(order.paymentDTO));
+      // }
+      // console.log('=== ADDRESS INFO DEBUG ===');
+      // console.log('Address DTO exists:', !!order.addressDTO);
+      // console.log('Address Info:', order.addressDTO);
+      // if (order.addressDTO) {
+      //   console.log('Address fields:', Object.keys(order.addressDTO));
+      // }
+      // console.log('=== END DEBUG ===');
     }
   }, [order]);
 
@@ -80,11 +80,11 @@ const SellerOrderDetails = ({ order, onClose, onUpdateStatus, isUpdating }) => {
     
     // Temporary debugging alert (remove in production)
     if (productName.includes('Product ID:')) {
-      console.warn('Product name not found for item:', item);
-      console.warn('Available properties:', Object.keys(item));
-      if (item.productDTO) {
-        console.warn('ProductDTO properties:', Object.keys(item.productDTO));
-      }
+      // console.warn('Product name not found for item:', item);
+      // console.warn('Available properties:', Object.keys(item));
+      // if (item.productDTO) {
+      //   console.warn('ProductDTO properties:', Object.keys(item.productDTO));
+      // }
     }
     
     return productName;

@@ -23,7 +23,7 @@ const SellerRoute = () => {
 
   // If not authenticated or not seller, redirect to login
   if (!isAuthenticated || !isSeller()) {
-    console.log('User not authenticated or not a seller, redirecting to login');
+    // console.log('User not authenticated or not a seller, redirecting to login');
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 

@@ -138,7 +138,7 @@ const orderSlice = createSlice({
         state.isLoading = false;
         state.success = true;
         state.order = action.payload;
-        console.log('Order created successfully:', action.payload);
+        // console.log('Order created successfully:', action.payload);
       })
       .addCase(createOrder.rejected, (state, action) => {
         state.isLoading = false;

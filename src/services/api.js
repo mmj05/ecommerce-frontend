@@ -19,10 +19,10 @@ api.interceptors.request.use(
     config.withCredentials = true;
     
     // Log request details for debugging
-    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`, {
-      withCredentials: config.withCredentials,
-      headers: config.headers
-    });
+    // console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+    //   withCredentials: config.withCredentials,
+    //   headers: config.headers
+    // });
     
     return config;
   },
@@ -36,7 +36,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     // Log successful responses
-    console.log(`API Response: ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`);
+    // console.log(`API Response: ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`);
     return response;
   },
   (error) => {

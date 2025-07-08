@@ -22,7 +22,7 @@ const AdminRoute = () => {
 
   // If not authenticated or not admin, redirect to login
   if (!isAuthenticated || !isAdmin()) {
-    console.log('User not authenticated or not admin, redirecting to login');
+    // console.log('User not authenticated or not admin, redirecting to login');
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
