@@ -1,20 +1,20 @@
-// Fixed authService.js with updated endpoint paths
+// Updated authService.js for header-based authentication
 import api from './api';
 
 const authService = {
-  // Login user - Correctly handles cookie-based auth
+  // Login user - Now handles JWT token from response body
   login: async (userData) => {
     try {
-      // The backend sets JWT as HTTP-only cookie
+      // The backend returns JWT in response body
       const response = await api.post('/auth/signin', userData);
       
-      // Store user info from response (no need to extract token)
+      // Store user info with JWT token
       const userInfo = {
         ...response.data,
         isLoggedIn: true  // Add flag to indicate logged-in state
       };
       
-      // Store user info (but not JWT - it's in the HTTP-only cookie)
+      // Store user info including JWT token
       localStorage.setItem('user', JSON.stringify(userInfo));
       
       return userInfo;
@@ -26,29 +26,46 @@ const authService = {
 
   // Register user
   register: async (userData) => {
-    try {
-      const response = await api.post('/auth/signup', userData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.post('/auth/signup', userData);
+    return response.data;
   },
 
   // Get current user details
   getCurrentUser: async () => {
     try {
-      // The cookie is sent automatically with withCredentials: true
+      // Check if we have a valid token first
+      const user = localStorage.getItem('user');
+      if (!user) {
+        return null;
+      }
+      
+      let userData;
+      try {
+        userData = JSON.parse(user);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        localStorage.removeItem('user');
+        return null;
+      }
+      
+      if (!userData.jwtToken) {
+        localStorage.removeItem('user');
+        return null;
+      }
+      
+      // The Authorization header is added automatically by the request interceptor
       const response = await api.get('/auth/user');
       
       if (response.data) {
-        // Update user info in localStorage
-        const userInfo = {
+        // Update user info in localStorage (keep the existing JWT token)
+        const updatedUserInfo = {
           ...response.data,
+          jwtToken: userData.jwtToken, // Keep the existing token
           isLoggedIn: true
         };
         
-        localStorage.setItem('user', JSON.stringify(userInfo));
-        return userInfo;
+        localStorage.setItem('user', JSON.stringify(updatedUserInfo));
+        return updatedUserInfo;
       }
       
       return null;
@@ -67,7 +84,7 @@ const authService = {
   // Logout user
   logout: async () => {
     try {
-      // Backend will clear the JWT cookie
+      // Backend no longer needs to clear cookies
       const response = await api.post('/auth/signout');
       
       // Clear user data from localStorage
@@ -83,47 +100,31 @@ const authService = {
 
   // Update user email - UPDATED endpoint
   updateUserEmail: async (email) => {
-    try {
-      const response = await api.put('/profile/email', { email });
-      
-      // Update user info in localStorage
-      const userData = JSON.parse(localStorage.getItem('user') || '{}');
-      userData.email = email;
-      localStorage.setItem('user', JSON.stringify(userData));
-      
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.put('/profile/email', { email });
+    
+    // Update user info in localStorage
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    userData.email = email;
+    localStorage.setItem('user', JSON.stringify(userData));
+    
+    return response.data;
   },
 
   // Change password - UPDATED endpoint
   changePassword: async (passwordData) => {
-    try {
-      const response = await api.put('/profile/password', passwordData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.put('/profile/password', passwordData);
+    return response.data;
   },
 
   // Password reset functions
   requestPasswordReset: async (email) => {
-    try {
-      const response = await api.post('/auth/forgot-password', { email });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
   },
 
   resetPassword: async (token, newPassword) => {
-    try {
-      const response = await api.post(`/auth/reset-password/${token}`, { newPassword });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.post(`/auth/reset-password/${token}`, { newPassword });
+    return response.data;
   }
 };
 
