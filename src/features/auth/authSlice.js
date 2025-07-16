@@ -1,10 +1,10 @@
-// Enhanced authSlice.js with new features
+// Enhanced authSlice.js with header-based authentication
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authService from '../../services/authService';
 import { clearCart, mergeCart } from '../cart/cartSlice';
 
 // Check if user info is stored in localStorage
-// We only need basic user info, as JWT is stored in HTTP-only cookie
+// JWT token is now stored in localStorage along with user info
 const storedUser = localStorage.getItem('user') 
   ? JSON.parse(localStorage.getItem('user'))
   : null;
@@ -23,7 +23,7 @@ export const login = createAsyncThunk(
   'auth/login',
   async (userData, { rejectWithValue, dispatch }) => {
     try {
-      // Login will set the JWT cookie and return user info
+      // Login will return JWT token in response body along with user info
       const response = await authService.login(userData);
       
       // After successful login, merge guest cart with user cart
@@ -41,7 +41,7 @@ export const logout = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue, dispatch }) => {
     try {
-      // Logout will clear the JWT cookie
+      // Logout will clear user data from localStorage
       await authService.logout();
       
       // Clear the cart when logging out
@@ -72,21 +72,16 @@ export const register = createAsyncThunk(
 // Get current user
 export const getCurrentUser = createAsyncThunk(
   'auth/getCurrentUser',
-  async (_, { rejectWithValue }) => {
-    try {
-      // Check for basic user info
-      if (!localStorage.getItem('user')) {
-        return null;
-      }
-      
-      // Get current user will validate the cookie and return user info
-      const response = await authService.getCurrentUser();
-      return response;
-    } catch (error) {
-      // If auth fails, clear user info
-      localStorage.removeItem('user');
+  async () => {
+    // Check for basic user info and JWT token
+    if (!localStorage.getItem('user')) {
       return null;
     }
+    
+    // Get current user will validate the token via Authorization header and return user info
+    // authService.getCurrentUser handles errors internally and returns null on failure
+    const response = await authService.getCurrentUser();
+    return response;
   }
 );
 
