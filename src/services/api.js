@@ -1,4 +1,4 @@
-// src/services/api.js - Enhanced for better debugging and authentication handling
+// src/services/api.js - Enhanced for header-based authentication
 import axios from 'axios';
 
 // Create an axios instance
@@ -7,20 +7,30 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  // CRITICAL for cookie-based auth
-  withCredentials: true,
+  // No longer needed for header-based auth
+  withCredentials: false,
   timeout: 10000, // 10 second timeout
 });
 
-// Request interceptor - ensure credentials and log requests
+// Request interceptor - add Authorization header
 api.interceptors.request.use(
   (config) => {
-    // Always include credentials to ensure cookies are sent
-    config.withCredentials = true;
+    // Get JWT token from localStorage
+    const user = localStorage.getItem('user');
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        if (userData.jwtToken) {
+          config.headers.Authorization = `Bearer ${userData.jwtToken}`;
+        }
+      } catch (error) {
+        console.error('Error parsing user data from localStorage:', error);
+        localStorage.removeItem('user');
+      }
+    }
     
     // Log request details for debugging
     // console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`, {
-    //   withCredentials: config.withCredentials,
     //   headers: config.headers
     // });
     
